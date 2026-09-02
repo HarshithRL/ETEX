@@ -58,6 +58,8 @@ pillow>=10.0.0
 # shared/artifacts PDF parser (pdf_parser.py)
 pdfplumber>=0.11.0
 pypdf>=5.0.0
+# shared/artifacts PDF create (writers/pdf_writer.py) — pure Python, no GTK
+reportlab>=4.2.0
 # Optional OCR for scanned PDFs (ParseOptions.use_ocr / test.py --ocr)
 pytesseract>=0.3.10
 
