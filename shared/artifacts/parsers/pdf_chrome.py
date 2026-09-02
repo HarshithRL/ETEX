@@ -9,7 +9,9 @@ _HEADER_NOISE = re.compile(
     r"(?i)^("
     r"etex\s+group(\s*[|I]\s*\d+)?"
     r"|confidential"
+    r"|printed\s+on(\s*[:.].*)?"
     r"|page\s+\d+(\s+of\s+\d+)?"
+    r"|page\s+\d+\s*/\s*\d+"
     r"|\d+\s*/\s*\d+"
     r"|\d{1,3}"
     r")$"
@@ -27,7 +29,13 @@ def is_header_noise(text: str) -> bool:
     if _HEADER_NOISE.match(stripped):
         return True
     lowered = chrome_key(stripped)
-    return lowered.startswith("etex group i") or lowered.startswith("etex group |")
+    if lowered.startswith("etex group i") or lowered.startswith("etex group |"):
+        return True
+    if lowered.startswith("printed on"):
+        return True
+    if re.match(r"(?i)^page\s+\d+(\s+of\s+\d+)?$", lowered):
+        return True
+    return False
 
 
 class PdfHeaderFooterDetector:

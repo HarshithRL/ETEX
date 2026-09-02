@@ -9,6 +9,7 @@ _MIN_IMAGE_EDGE = 24.0
 _HEADER_BAND = 0.12
 _FOOTER_BAND = 0.90
 _CHART_CURVES = 50
+_SKIP_DRAWING_CHARTS = {"design", "dashboard", "table"}
 
 
 def extract_visuals(
@@ -35,7 +36,7 @@ def extract_visuals(
         if any(overlap_ratio(box, table) >= 0.5 for table in table_boxes):
             continue
         image_boxes.append(box)
-        caption = _nearest_caption(lines, box)
+        caption = nearest_caption(lines, box)
         placeholder = "[chart]" if _looks_like_chart(page, box, page_kind) else "[image]"
         text = f"{caption}\n{placeholder}".strip() if caption else placeholder
         block_type = BlockType.CHART if placeholder == "[chart]" else BlockType.IMAGE
@@ -57,7 +58,7 @@ def extract_visuals(
 
     chart_box = _drawing_chart_bbox(page, table_boxes, image_boxes, page_kind)
     if chart_box is not None:
-        caption = _nearest_caption(lines, chart_box)
+        caption = nearest_caption(lines, chart_box)
         text = f"{caption}\n[chart]".strip() if caption else "[chart]"
         index += 1
         blocks.append(
@@ -113,7 +114,7 @@ def _skip_logo(
 
 
 def _looks_like_chart(page, bbox: tuple[float, float, float, float], page_kind: str) -> bool:
-    if page_kind == "design":
+    if page_kind in _SKIP_DRAWING_CHARTS:
         return False
     curves = 0
     try:
@@ -139,7 +140,7 @@ def _drawing_chart_bbox(
     image_boxes: list[tuple[float, float, float, float]],
     page_kind: str,
 ) -> tuple[float, float, float, float] | None:
-    if page_kind == "design":
+    if page_kind in _SKIP_DRAWING_CHARTS:
         return None
     if vector_item_count(page) < _CHART_CURVES:
         return None
@@ -172,7 +173,7 @@ def _drawing_chart_bbox(
     return merged
 
 
-def _nearest_caption(lines: list[LayoutLine], bbox: tuple[float, float, float, float]) -> str:
+def nearest_caption(lines: list[LayoutLine], bbox: tuple[float, float, float, float]) -> str:
     best = ""
     best_gap = 48.0
     for line in lines:

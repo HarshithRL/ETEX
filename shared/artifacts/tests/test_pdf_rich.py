@@ -67,6 +67,8 @@ def test_bdo_contract_and_page13_table(handler: ArtifactHandler):
     filename = path.name
     assert all(filename not in block.text for block in doc.blocks)
     assert not any(block.text.strip().upper().startswith("ETEX GROUP I") for block in doc.blocks)
+    assert not any("Printed On" in block.text for block in doc.blocks)
+    assert not any(re.search(r"(?i)^page\s+\d+\s+of\s+\d+$", block.text.strip()) for block in doc.blocks)
     assert not any(block.type == BlockType.OCR for block in doc.blocks)
 
     page1 = [block for block in doc.blocks if block.location.page == 1]
@@ -112,6 +114,7 @@ def test_pwc_design_pages_not_empty(handler: ArtifactHandler):
     for page_no in design_pages:
         blocks = [block for block in doc.blocks if block.location.page == page_no]
         assert blocks, f"design page {page_no} is empty"
+        assert not any(block.type == BlockType.CHART for block in blocks)
 
 
 def test_inetum_mixed_table_and_visual(handler: ArtifactHandler):
@@ -146,3 +149,29 @@ def test_graydon_optional_table_cap(handler: ArtifactHandler):
             cells += sum(len(row) for row in block.table)
     assert not by_page or max(by_page.values()) <= 12
     assert cells < 900
+
+    page1 = [block for block in doc.blocks if block.location.page == 1]
+    assert page1
+    assert len(page1) <= 40
+    headings = [block for block in page1 if block.type == BlockType.HEADING]
+    assert len(headings) <= 8
+    credit = next(
+        (
+            block
+            for block in page1
+            if "Credit Limit" in block.text
+            and "1750000" in block.text.replace(" ", "").replace(",", "").replace(".", "")
+        ),
+        None,
+    )
+    if credit is not None:
+        assert credit.type == BlockType.TEXT
+
+    page2_chips = [
+        block
+        for block in doc.blocks
+        if block.location.page == 2
+        and block.type in {BlockType.TEXT, BlockType.HEADING}
+        and len(block.text.strip()) < 24
+    ]
+    assert len(page2_chips) <= 12

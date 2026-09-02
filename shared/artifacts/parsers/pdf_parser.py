@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pymupdf
 
-from ..blocks import make_content_block
 from ..exceptions import ArtifactParseError, CorruptArtifact, EncryptedArtifact
 from ..heading_stack import HeadingStack
 from ..ids import file_artifact_id
@@ -19,15 +18,13 @@ from ..models import (
     OutlineItem,
     PageInfo,
     ParseOptions,
-    SourceLocation,
 )
 from .pdf_chrome import PdfHeaderFooterDetector
-from .pdf_geometry import overlaps_any, round_bbox
-from .pdf_headings import apply_heading_paths, lines_to_blocks, merge_cover_titles
-from .pdf_layout import PdfLayoutExtractor, PdfPageClassifier, PdfTextNormalizer
-from .pdf_ocr import PdfOcrFallback
-from .pdf_tables import PdfTableExtractor, table_to_text
-from .pdf_visuals import extract_visuals
+from .pdf_geometry import round_bbox
+from .pdf_headings import apply_heading_paths
+from .pdf_layout import PdfLayoutExtractor, PdfPageClassifier
+from .pdf_reconstruct import ReconstructPage, reconstructor_for
+from .pdf_reconstruct.letter import LetterReconstructor
 
 
 class PdfParser:
@@ -59,9 +56,8 @@ class PdfParser:
             chrome = PdfHeaderFooterDetector().detect(selected)
             classifier = PdfPageClassifier()
             extractor = PdfLayoutExtractor()
-            tables = PdfTableExtractor()
-            ocr = PdfOcrFallback()
-            normalizer = PdfTextNormalizer()
+            chrome_detector = PdfHeaderFooterDetector()
+            letter = LetterReconstructor()
             stack = HeadingStack()
 
             blocks: list[ContentBlock] = []
@@ -81,91 +77,37 @@ class PdfParser:
                         height=page_height,
                         rotation=int(page.rotation or 0),
                         kind=page_kind,
+                        mediabox=_page_mediabox(page),
                     )
                 )
 
-                page_tables: list[tuple[list[list[str]], tuple[float, float, float, float], str]] = []
-                if options.include_tables and page_kind in {"table", "digital", "mixed", "design"}:
-                    page_tables = tables.extract(page, path, page_index, page_kind, options.password)
-
-                table_boxes = [bbox for _, bbox, _ in page_tables]
-                chrome_detector = PdfHeaderFooterDetector()
                 lines = [
                     line
                     for line in extractor.lines(page, page_no)
                     if not chrome_detector.is_chrome(
                         line.text, line.bbox, page_height or 1, chrome
                     )
-                    and not overlaps_any(line.bbox, table_boxes)
                 ]
-                lines = merge_cover_titles(lines, page_kind)
-
-                page_blocks: list[ContentBlock] = []
-                for table_i, (matrix, bbox, engine) in enumerate(page_tables):
-                    index += 1
-                    page_blocks.append(
-                        make_content_block(
-                            seq_id=f"pdf-{index:04d}",
-                            block_type=BlockType.TABLE,
-                            text=table_to_text(matrix),
-                            table=matrix,
-                            location=SourceLocation(
-                                page=page_no,
-                                bbox=round_bbox(bbox),
-                                page_width=page_width,
-                                page_height=page_height,
-                                table_index=table_i,
-                            ),
-                            extra={"engine": engine, "page_kind": page_kind},
-                        )
+                ctx = ReconstructPage(
+                    page=page,
+                    page_no=page_no,
+                    page_index=page_index,
+                    kind=page_kind,
+                    width=page_width,
+                    height=page_height,
+                    path=path,
+                    options=options,
+                    lines=lines,
+                    warnings=warnings,
+                )
+                reconstructor = reconstructor_for(page_kind)
+                index, page_blocks = reconstructor.reconstruct(ctx, index)
+                if not page_blocks and page_kind not in {"digital", "mixed", "scanned"}:
+                    warnings.append(
+                        f"Page {page_no} {page_kind} reconstructor returned no blocks; falling back to letter."
                     )
+                    index, page_blocks = letter.reconstruct(ctx, index)
 
-                index, visual_blocks = extract_visuals(
-                    page, lines, page_kind, page_no, table_boxes, index
-                )
-                page_blocks.extend(visual_blocks)
-
-                index, text_blocks = lines_to_blocks(
-                    lines, page_kind, page_no, index, page_width, page_height
-                )
-                page_blocks.extend(text_blocks)
-
-                page_has_text = any(
-                    block.type not in {BlockType.IMAGE, BlockType.CHART} for block in page_blocks
-                )
-                if not page_has_text and page_kind in {"scanned", "design"}:
-                    if options.use_ocr:
-                        ocr_text = ocr.extract(page, warnings, page_no)
-                        if ocr_text:
-                            index, ocr_block = ocr.as_block(
-                                ocr_text, page_no, page_width, page_height, page_kind, index
-                            )
-                            page_blocks.append(ocr_block)
-                            page_has_text = True
-                    if not page_has_text:
-                        fallback = normalizer.normalize(page.get_text("text") or "")
-                        if fallback:
-                            index += 1
-                            page_blocks.append(
-                                make_content_block(
-                                    seq_id=f"pdf-{index:04d}",
-                                    block_type=BlockType.TEXT,
-                                    text=fallback,
-                                    location=SourceLocation(
-                                        page=page_no,
-                                        page_width=page_width,
-                                        page_height=page_height,
-                                    ),
-                                    extra={"engine": "pymupdf.text", "page_kind": page_kind},
-                                )
-                            )
-                            page_has_text = True
-                    if not page_has_text:
-                        warnings.append(
-                            f"Page {page_no} is a {page_kind} page with little extractable text."
-                        )
-
-                page_blocks.sort(key=_reading_key)
                 apply_heading_paths(page_blocks, stack)
                 blocks.extend(page_blocks)
         except EncryptedArtifact:
@@ -214,11 +156,20 @@ class PdfParser:
         )
 
 
-def _reading_key(block: ContentBlock) -> tuple[float, float]:
-    bbox = block.location.bbox
-    if bbox is None:
-        return (10_000.0, 0.0)
-    return (bbox[1], bbox[0])
+def _page_mediabox(page) -> tuple[float, float, float, float] | None:
+    try:
+        mediabox = page.mediabox
+        crop = page.rect
+        if (
+            abs(float(mediabox.width) - float(crop.width)) < 0.5
+            and abs(float(mediabox.height) - float(crop.height)) < 0.5
+        ):
+            return None
+        return round_bbox(
+            (float(mediabox.x0), float(mediabox.y0), float(mediabox.x1), float(mediabox.y1))
+        )
+    except Exception:
+        return None
 
 
 def _meta_str(value: object) -> str | None:
@@ -226,6 +177,3 @@ def _meta_str(value: object) -> str | None:
         return None
     text = str(value).strip()
     return text or None
-
-
-

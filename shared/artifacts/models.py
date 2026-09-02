@@ -72,15 +72,19 @@ class PageInfo:
     height: float
     rotation: int = 0
     kind: str = "mixed"
+    mediabox: tuple[float, float, float, float] | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "page": self.page,
             "width": round(float(self.width), 1),
             "height": round(float(self.height), 1),
             "rotation": int(self.rotation),
             "kind": self.kind,
         }
+        if self.mediabox is not None:
+            payload["mediabox"] = [round(float(item), 1) for item in self.mediabox]
+        return payload
 
 
 @dataclass

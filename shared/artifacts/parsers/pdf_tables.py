@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 from pathlib import Path
 
 from .pdf_geometry import round_bbox, vector_item_count
 
 MAX_TABLES_PER_PAGE = 12
+PDFPLUMBER_TIMEOUT_SEC = 8.0
 
 
 def drop_empty_columns(table: list[list[str]]) -> list[list[str]]:
@@ -63,6 +65,16 @@ class PdfTableExtractor:
         return fallback[:MAX_TABLES_PER_PAGE]
 
     def _pdfplumber_fallback(
+        self, path: Path, page_index: int, password: str | None
+    ) -> list[tuple[list[list[str]], tuple[float, float, float, float], str]]:
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(self._pdfplumber_run, path, page_index, password)
+            try:
+                return future.result(timeout=PDFPLUMBER_TIMEOUT_SEC)
+            except FuturesTimeout:
+                return []
+
+    def _pdfplumber_run(
         self, path: Path, page_index: int, password: str | None
     ) -> list[tuple[list[list[str]], tuple[float, float, float, float], str]]:
         try:

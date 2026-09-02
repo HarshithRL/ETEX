@@ -12,6 +12,18 @@ from .pdf_layout import LayoutLine
 _LIST_RE = re.compile(r"^\s*([•●○▪►▪]|[-*+]|\d+[.)]|[A-Za-z][.)])\s+\S")
 _NUMBERED_TITLE = re.compile(r"^(\d+(?:\.\d+){0,3})\.?\s+(\S.*)$")
 _ALSO_SEE = re.compile(r"(?i)^also\s+see\b")
+_MONTH = (
+    r"(?:january|february|march|april|may|june|july|august|september|october|"
+    r"november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)"
+)
+_DATE = re.compile(
+    rf"(?i)^(?:\d{{1,2}}\s+{_MONTH}\s+\d{{2,4}}|{_MONTH}\s+\d{{1,2}},?\s+\d{{2,4}})$"
+)
+_POSTCODE = re.compile(r"^\d{1,5}\s+[A-Z]{3,}$")
+_SHORT_CODE = re.compile(r"^[A-Z]{2,5}$")
+_NUMERIC_RANGE = re.compile(r"^\d[\d\s]*\s*[–-]\s*\d[\d\s]*$")
+_CURRENCY_OR_KPI = re.compile(r"[€$£]\s*[\d.,]+")
+_MOSTLY_NUMERIC = re.compile(r"^[\d.,\s%/+-]+$")
 
 
 def heading_level(text: str, font_size: float = 0.0, bold: bool = False, cut: float = 11.0) -> int | None:
@@ -19,6 +31,8 @@ def heading_level(text: str, font_size: float = 0.0, bold: bool = False, cut: fl
     if not stripped or len(stripped) > 80:
         return None
     if re.fullmatch(r"N\.?B\.?", stripped, re.I):
+        return None
+    if _looks_like_non_heading(stripped):
         return None
     numbered = _NUMBERED_TITLE.match(stripped)
     if numbered:
@@ -51,6 +65,22 @@ def _is_numbered_title(rest: str) -> bool:
         return False
     titleish = sum(1 for word in words if word[:1].isupper() or not word[:1].isalpha())
     return titleish >= max(1, len(words) - 1)
+
+
+def _looks_like_non_heading(text: str) -> bool:
+    if _DATE.match(text):
+        return True
+    if _POSTCODE.match(text):
+        return True
+    if _SHORT_CODE.match(text):
+        return True
+    if _NUMERIC_RANGE.match(text):
+        return True
+    if _CURRENCY_OR_KPI.search(text) and len(text.split()) <= 4:
+        return True
+    if _MOSTLY_NUMERIC.match(text) and any(ch.isdigit() for ch in text):
+        return True
+    return False
 
 
 def looks_like_sentence(text: str) -> bool:
@@ -116,6 +146,7 @@ def lines_to_blocks(
     index: int,
     page_width: float,
     page_height: float,
+    reconstructor: str | None = None,
 ) -> tuple[int, list[ContentBlock]]:
     if not lines:
         return index, []
@@ -156,6 +187,7 @@ def lines_to_blocks(
                     "engine": "pymupdf",
                     "page_kind": page_kind,
                     "font_size": round(first.font_size, 2),
+                    **({"reconstructor": reconstructor} if reconstructor else {}),
                 },
                 level=level,
             )

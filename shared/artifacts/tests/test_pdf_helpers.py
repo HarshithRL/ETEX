@@ -23,10 +23,21 @@ def test_heading_numbered_title_only():
     assert heading_level("of 10% on the daily rates.", font_size=10, bold=True, cut=11) is None
 
 
+def test_heading_rejects_dates_codes_and_kpis():
+    assert heading_level("8 January 1990", font_size=14, bold=True, cut=11) is None
+    assert heading_level("0 ZAVENTEM", font_size=12, bold=True, cut=11) is None
+    assert heading_level("ESG", font_size=16, bold=True, cut=11) is None
+    assert heading_level("500 - 999", font_size=14, bold=True, cut=11) is None
+    assert heading_level("€1,750,000", font_size=18, bold=True, cut=11) is None
+
+
 def test_footer_noise_etex_group():
     assert is_header_noise("ETEX GROUP I 13")
     assert is_header_noise("ETEX GROUP | 13")
     assert is_header_noise("ETEX GROUP I")
+    assert is_header_noise("Printed On")
+    assert is_header_noise("Printed On: 12 March 2026")
+    assert is_header_noise("Page 1 of 23")
     assert not is_header_noise("3.2 Summary")
 
 

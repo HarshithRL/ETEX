@@ -41,6 +41,32 @@ def overlaps_any(
     return any(overlap_ratio(bbox, other) >= threshold for other in others)
 
 
+def contained_in(
+    inner: tuple[float, float, float, float],
+    outer: tuple[float, float, float, float],
+    padding: float = 4.0,
+) -> bool:
+    return (
+        inner[0] >= outer[0] - padding
+        and inner[1] >= outer[1] - padding
+        and inner[2] <= outer[2] + padding
+        and inner[3] <= outer[3] + padding
+    )
+
+
+def covered_by_any(
+    bbox: tuple[float, float, float, float],
+    others: list[tuple[float, float, float, float]],
+    *,
+    padding: float = 4.0,
+    overlap: float = 0.3,
+) -> bool:
+    return any(
+        contained_in(bbox, other, padding) or overlap_ratio(bbox, other) >= overlap
+        for other in others
+    )
+
+
 def vector_item_count(page) -> int:
     count = 0
     try:

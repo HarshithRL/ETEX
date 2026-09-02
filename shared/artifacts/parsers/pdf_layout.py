@@ -76,40 +76,11 @@ class PdfLayoutExtractor:
                         page=page_no,
                     )
                 )
-        return self._order_lines(raw, page.rect.width)
+        return sort_reading_lines(raw)
 
-    def _order_lines(self, lines: list[LayoutLine], page_width: float) -> list[LayoutLine]:
-        if not lines:
-            return []
-        if page_width > 700:
-            left, right = self._split_columns(lines, page_width)
-            if left and right:
-                return self._sort_reading(left) + self._sort_reading(right)
-        return self._sort_reading(lines)
 
-    @staticmethod
-    def _sort_reading(lines: list[LayoutLine]) -> list[LayoutLine]:
-        return sorted(lines, key=lambda line: (round(line.bbox[1] / 12), line.bbox[0]))
-
-    @staticmethod
-    def _split_columns(
-        lines: list[LayoutLine], page_width: float
-    ) -> tuple[list[LayoutLine], list[LayoutLine]]:
-        xs = sorted({round(line.bbox[0] / 20) * 20 for line in lines})
-        if len(xs) < 4:
-            return [], []
-        gaps = [(xs[i + 1] - xs[i], i) for i in range(len(xs) - 1)]
-        gap, idx = max(gaps)
-        if gap < 80:
-            return [], []
-        split_x = (xs[idx] + xs[idx + 1]) / 2
-        if split_x < page_width * 0.25 or split_x > page_width * 0.75:
-            return [], []
-        left = [line for line in lines if line.bbox[0] < split_x]
-        right = [line for line in lines if line.bbox[0] >= split_x]
-        if len(left) < 3 or len(right) < 3:
-            return [], []
-        return left, right
+def sort_reading_lines(lines: list[LayoutLine]) -> list[LayoutLine]:
+    return sorted(lines, key=lambda line: (round(line.bbox[1] / 12), line.bbox[0]))
 
 
 class PdfPageClassifier:
@@ -123,11 +94,35 @@ class PdfPageClassifier:
             n_tables = len(page.find_tables().tables or [])
         except Exception:
             n_tables = 0
+        short, long, x_clusters, n_lines = self._line_profile(page)
 
         if n_chars < 40 and n_images >= 1:
             return "scanned" if n_chars < 15 or n_images >= 2 else "design"
         if n_chars < 120 and n_images >= 1:
             return "design"
+
+        dashboard = (
+            n_tables <= 1
+            and n_lines >= 10
+            and short >= 8
+            and long <= 3
+            and x_clusters >= 3
+            and n_chars >= 80
+        )
+        chart = (
+            40 <= n_chars < 500
+            and long <= 1
+            and (n_vectors >= 50 or n_images >= 1)
+        )
+        if dashboard and chart:
+            if short >= 12 and n_chars >= 300:
+                return "dashboard"
+            return "chart"
+        if dashboard:
+            return "dashboard"
+        if chart:
+            return "chart"
+
         if n_tables >= 2 or (n_vectors > 40 and n_chars < 1500):
             return "table"
         if n_chars >= 200 and n_images == 0 and n_tables == 0:
@@ -139,3 +134,30 @@ class PdfPageClassifier:
         if n_chars == 0:
             return "scanned"
         return "mixed"
+
+    @staticmethod
+    def _line_profile(page) -> tuple[int, int, int, int]:
+        short = 0
+        long = 0
+        xs: set[int] = set()
+        count = 0
+        try:
+            data = page.get_text("dict")
+        except Exception:
+            return 0, 0, 0, 0
+        for block in data.get("blocks") or []:
+            if block.get("type") != 0:
+                continue
+            for line in block.get("lines") or []:
+                spans = line.get("spans") or []
+                text = "".join(str(span.get("text") or "") for span in spans).strip()
+                if not text:
+                    continue
+                count += 1
+                if len(text) <= 40:
+                    short += 1
+                if len(text) > 80:
+                    long += 1
+                bbox = line.get("bbox") or (0, 0, 0, 0)
+                xs.add(int(round(float(bbox[0]) / 40.0)))
+        return short, long, len(xs), count
