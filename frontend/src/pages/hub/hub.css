@@ -1,0 +1,231 @@
+.hub {
+  min-height: 100vh;
+  width: 100%;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.hub-container {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+
+.hub-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  color: var(--text-muted);
+}
+
+.hub-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.hub .brand {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.hub .etex-logo {
+  width: 105px;
+  height: auto;
+}
+
+.hub .brand-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--border-strong);
+}
+
+.hub .mate-name {
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: -0.3px;
+}
+
+.hub .mate-icon {
+  font-size: 18px;
+  color: var(--accent);
+}
+
+.welcome-section {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  align-items: center;
+  gap: 24px;
+  min-height: 160px;
+  margin-bottom: 40px;
+}
+
+.welcome-content h1 {
+  margin: 0 0 14px;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.4px;
+  color: var(--text);
+}
+
+.welcome-content p {
+  margin: 0;
+  max-width: 560px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.welcome-illustration img {
+  width: 100%;
+  max-width: 280px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+
+.category-section {
+  margin-bottom: 28px;
+  padding: 22px 20px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.category-title {
+  margin: 0 0 18px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.tool-card {
+  position: relative;
+  min-height: 156px;
+  padding: 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.tool-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.tool-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 16px;
+}
+
+.tool-icon img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.tool-bookmark {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: var(--text-subtle);
+  font-size: 16px;
+}
+
+.tool-card h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.tool-card p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.tool-card.is-coming-soon {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.tool-card.is-coming-soon:hover {
+  transform: none;
+  border-color: var(--border);
+  background: var(--surface-2);
+}
+
+.tool-badge {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.hub-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 48px;
+  opacity: 0.7;
+}
+
+.hub-footer img {
+  height: 28px;
+  width: auto;
+}
+
+@media (max-width: 800px) {
+  .hub-container {
+    padding: 32px 18px 56px;
+  }
+
+  .welcome-section {
+    grid-template-columns: 1fr;
+  }
+
+  .welcome-illustration {
+    display: none;
+  }
+
+  .tools-grid {
+    grid-template-columns: 1fr;
+  }
+}

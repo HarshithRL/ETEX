@@ -1,0 +1,110 @@
+"""SQLite engine, session factory, and schema bootstrap."""
+
+from __future__ import annotations
+
+import os
+from contextlib import contextmanager
+from pathlib import Path
+from typing import Generator
+
+from sqlalchemy import create_engine, event, text
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from shared.bootstrap import ensure_repo_root_on_path
+
+ensure_repo_root_on_path()
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_DEFAULT_DB_PATH = _REPO_ROOT / "mate.sqlite"
+
+_engine: Engine | None = None
+_SessionLocal: sessionmaker[Session] | None = None
+
+
+def sqlite_path() -> Path:
+    override = os.getenv("MATE_SQLITE_PATH", "").strip()
+    if override:
+        return Path(override).expanduser().resolve()
+    return _DEFAULT_DB_PATH
+
+
+def database_url() -> str:
+    return f"sqlite:///{sqlite_path().as_posix()}"
+
+
+def _enable_wal(dbapi_conn, _connection_record) -> None:
+    cursor = dbapi_conn.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
+
+
+def get_engine() -> Engine:
+    global _engine, _SessionLocal
+    if _engine is not None:
+        return _engine
+
+    db_path = sqlite_path()
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+
+    _engine = create_engine(
+        database_url(),
+        connect_args={"check_same_thread": False},
+        pool_pre_ping=True,
+    )
+    event.listen(_engine, "connect", _enable_wal)
+    _SessionLocal = sessionmaker(bind=_engine, autoflush=False, autocommit=False)
+    return _engine
+
+
+def get_session() -> Session:
+    if _SessionLocal is None:
+        get_engine()
+    assert _SessionLocal is not None
+    return _SessionLocal()
+
+
+@contextmanager
+def session_scope() -> Generator[Session, None, None]:
+    session = get_session()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+_PROJECT_COLUMN_MIGRATIONS: tuple[tuple[str, str], ...] = (
+    ("workflow_entry_point", "TEXT"),
+    ("business_process", "TEXT"),
+    ("requester", "TEXT"),
+    ("dept", "TEXT"),
+)
+
+
+def _ensure_project_columns(engine: Engine) -> None:
+    with engine.connect() as conn:
+        rows = conn.execute(text("PRAGMA table_info(project)")).fetchall()
+        existing = {row[1] for row in rows}
+        for column_name, column_type in _PROJECT_COLUMN_MIGRATIONS:
+            if column_name in existing:
+                continue
+            conn.execute(
+                text(f"ALTER TABLE project ADD COLUMN {column_name} {column_type}")
+            )
+        conn.commit()
+
+
+def init_db() -> None:
+    from shared.db.models import Base
+    from shared.db.seed import seed_hub_modules
+
+    engine = get_engine()
+    Base.metadata.create_all(bind=engine)
+    _ensure_project_columns(engine)
+    with session_scope() as session:
+        seed_hub_modules(session)

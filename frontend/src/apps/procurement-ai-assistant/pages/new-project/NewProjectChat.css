@@ -1,0 +1,90 @@
+.new-project-chat-header {
+  flex-shrink: 0;
+  margin-bottom: 18px;
+}
+
+.new-project-page:has(.intake-chat-layout) .new-project-container {
+  display: flex;
+  flex-direction: column;
+  max-width: 1600px;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  padding-bottom: 24px;
+}
+
+.intake-chat-layout {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(340px, 1fr) minmax(0, 1.4fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 18px;
+  align-items: stretch;
+  min-height: 0;
+}
+
+.intake-chat-pane {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.intake-chat-pane > [data-slot="card"] {
+  height: 100%;
+  min-height: 0;
+}
+
+.intake-chat-form {
+  min-width: 0;
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+  container-name: intake-form;
+  container-type: inline-size;
+}
+
+.intake-chat-form .new-project-form-grid {
+  min-height: 100%;
+}
+
+.intake-chat-form-switch {
+  color: #ff6900;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.intake-chat-form-switch:hover {
+  color: #ff7d26;
+}
+
+@container intake-form (max-width: 760px) {
+  .intake-chat-form .new-project-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1100px) {
+  .new-project-page:has(.intake-chat-layout) .new-project-container {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .intake-chat-layout {
+    flex: none;
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    overflow: visible;
+  }
+
+  .intake-chat-pane {
+    height: min(64vh, 640px);
+  }
+
+  .intake-chat-form {
+    max-height: none;
+    overflow: visible;
+  }
+}

@@ -1,0 +1,484 @@
+.workspace-tab {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) 320px;
+  gap: 12px;
+  height: 100%;
+  min-height: 560px;
+}
+
+.ws-files,
+.ws-chat,
+.ws-studio {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid #303030;
+  border-radius: 12px;
+  background: #181818;
+  overflow: hidden;
+}
+
+.ws-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.ws-panel-header strong {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: #aaa;
+}
+
+.ws-panel-header button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #353535;
+  border-radius: 7px;
+  background: #202020;
+  color: #ccc;
+  cursor: pointer;
+}
+
+.ws-file-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 12px;
+  padding: 0 10px;
+  height: 36px;
+  border: 1px solid #353535;
+  border-radius: 8px;
+  background: #151515;
+  color: #666;
+}
+
+.ws-file-search input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: #eee;
+  font-size: 12px;
+  outline: none;
+}
+
+.ws-files {
+  overflow: auto;
+}
+
+.ws-file-section {
+  padding: 8px 12px 12px;
+}
+
+.ws-file-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: #777;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.ws-file-section-title span {
+  color: #555;
+}
+
+.ws-file-folder {
+  margin: 8px 0 4px;
+  color: #ccc;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ws-file-item,
+.ws-artifact-item {
+  display: block;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #999;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ws-file-item:hover {
+  background: #222;
+  color: #eee;
+}
+
+.ws-artifact-item {
+  color: #aaa;
+  cursor: default;
+}
+
+.ws-storage {
+  margin-top: auto;
+  padding: 12px;
+  border-top: 1px solid #2a2a2a;
+}
+
+.ws-storage span {
+  display: block;
+  color: #777;
+  font-size: 11px;
+}
+
+.ws-storage strong {
+  display: block;
+  margin: 6px 0 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ws-storage-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: #2a2a2a;
+  overflow: hidden;
+}
+
+.ws-storage-bar span {
+  display: block;
+  height: 100%;
+  background: #ff6900;
+}
+
+.ws-center-tabs,
+.ws-studio-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 8px 10px 0;
+  border-bottom: 1px solid #2a2a2a;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.ws-center-tabs button,
+.ws-studio-tabs button {
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  color: #777;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ws-center-tabs button.active,
+.ws-studio-tabs button.active {
+  border-bottom-color: #ff6900;
+  color: #fff;
+}
+
+.ws-chat-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px;
+  overflow: auto;
+}
+
+.ws-chat-user,
+.ws-chat-ai {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.ws-avatar,
+.ws-ai-avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ws-avatar {
+  background: #ff6900;
+  color: #fff;
+}
+
+.ws-ai-avatar {
+  background: #2a2a2a;
+  color: #ff8a3d;
+}
+
+.ws-chat-bubble {
+  max-width: 80%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #242424;
+  color: #eee;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.ws-chat-ai-body {
+  max-width: 85%;
+}
+
+.ws-chat-ai-body strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #ff8a3d;
+  font-size: 12px;
+}
+
+.ws-chat-ai-body p {
+  margin: 0 0 10px;
+  color: #ddd;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ws-chat-ai-body ul {
+  margin: 0 0 12px;
+  padding-left: 18px;
+  color: #ccc;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.ws-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ws-sources span {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(255, 105, 0, 0.12);
+  color: #ff8a3d;
+  font-size: 11px;
+}
+
+.ws-chat-composer {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ws-chat-input-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.ws-chat-composer input {
+  flex: 1;
+  min-width: 0;
+  height: 42px;
+  padding: 0 14px;
+  border: 1px solid #353535;
+  border-radius: 9px;
+  background: #151515;
+  color: #eee;
+  font-size: 13px;
+  outline: none;
+}
+
+.ws-chat-composer input:disabled,
+.ws-chat-composer button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.ws-chat-error {
+  margin: 8px 0 0;
+  color: #f07178;
+  font-size: 12px;
+}
+
+.ws-stream-context {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.ws-stream-context-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border-left: 2px solid #ff8a3d;
+  background: rgba(255, 138, 61, 0.08);
+  font-size: 11px;
+}
+
+.ws-stream-context-label {
+  color: #ff8a3d;
+  font-weight: 600;
+}
+
+.ws-stream-context-detail {
+  color: #b0b0b0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ws-stream-text {
+  white-space: pre-wrap;
+}
+
+.ws-stream-caret {
+  display: inline-block;
+  width: 6px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: #ff8a3d;
+  animation: ws-caret-blink 1s step-end infinite;
+}
+
+@keyframes ws-caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.ws-center-placeholder,
+.ws-studio-placeholder {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: #777;
+  font-size: 13px;
+  text-align: center;
+}
+
+.ws-studio-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.ws-graph {
+  position: relative;
+  height: 100%;
+  min-height: 320px;
+  padding: 12px;
+}
+
+.ws-graph-svg {
+  position: absolute;
+  inset: 12px;
+  width: calc(100% - 24px);
+  height: calc(100% - 24px);
+}
+
+.ws-graph-edge {
+  stroke: #3a3a3a;
+  stroke-width: 1.5;
+}
+
+.ws-graph-label {
+  fill: #666;
+  font-size: 9px;
+}
+
+.ws-graph-node {
+  position: absolute;
+  max-width: 120px;
+  padding: 8px 10px;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  background: #222;
+  color: #ddd;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.ws-graph-node.center {
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-color: #ff6900;
+  background: rgba(255, 105, 0, 0.12);
+  color: #ff8a3d;
+  font-weight: 600;
+  z-index: 1;
+}
+
+.ws-graph-node.n1 {
+  top: 8%;
+  left: 4%;
+}
+
+.ws-graph-node.n2 {
+  top: 6%;
+  right: 4%;
+}
+
+.ws-graph-node.n3 {
+  bottom: 18%;
+  left: 2%;
+}
+
+.ws-graph-node.n4 {
+  bottom: 14%;
+  right: 2%;
+}
+
+.ws-graph-node.n5 {
+  bottom: 2%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+@media (max-width: 1100px) {
+  .workspace-tab {
+    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-rows: minmax(420px, 1fr) 320px;
+  }
+
+  .ws-studio {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 700px) {
+  .workspace-tab {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    height: auto;
+  }
+
+  .ws-files,
+  .ws-chat,
+  .ws-studio {
+    min-height: 360px;
+  }
+}

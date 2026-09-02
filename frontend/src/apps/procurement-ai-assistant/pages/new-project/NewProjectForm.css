@@ -1,0 +1,194 @@
+.new-project-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.new-project-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 12px;
+}
+
+.new-project-field-wide {
+  grid-column: 1 / -1;
+}
+
+.new-project-fields label,
+.new-project-req-row input {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.new-project-fields label > span,
+.new-project-req-labels span,
+.new-project-req-head > span {
+  color: #888;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.1px;
+}
+
+.new-project-fields input,
+.new-project-fields textarea,
+.new-project-fields select,
+.new-project-req-row input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #353535;
+  border-radius: 8px;
+  background: #151515;
+  color: #eee;
+  font: inherit;
+  font-size: 14px;
+}
+
+.new-project-fields select {
+  cursor: pointer;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #888 50%),
+    linear-gradient(135deg, #888 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(50% - 2px),
+    calc(100% - 12px) calc(50% - 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 34px;
+}
+
+.new-project-readonly,
+.new-project-fields input:disabled {
+  color: #aaa;
+  background: #101010;
+  border-color: #2a2a2a;
+  cursor: not-allowed;
+}
+
+.new-project-fields textarea {
+  resize: vertical;
+  min-height: 110px;
+}
+
+.new-project-fields input::placeholder,
+.new-project-fields textarea::placeholder,
+.new-project-req-row input::placeholder {
+  color: #666;
+}
+
+.new-project-requirements {
+  margin-top: 22px;
+}
+
+.new-project-req-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.new-project-add-line {
+  padding: 8px 14px;
+}
+
+.new-project-req-row {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr) 70px 36px;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.new-project-req-labels {
+  margin-bottom: 6px;
+}
+
+.new-project-offers {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.new-project-offers-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.new-project-offers-body .new-project-dropzone {
+  flex: 1;
+  min-height: 220px;
+}
+
+.new-project-staged {
+  margin-top: 14px;
+}
+
+.new-project-staged-label {
+  display: block;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+}
+
+.new-project-staged-status {
+  margin: 4px 0 0;
+  color: #999;
+  font-size: 13px;
+}
+
+.new-project-offers-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 22px;
+}
+
+.new-project-offers-footer .new-project-create,
+.new-project-offers-footer .primary-button {
+  width: 100%;
+  min-width: 0;
+}
+
+.new-project-offers-footer .new-project-error {
+  margin: 0;
+}
+
+.new-project-offers-hint {
+  max-width: none;
+  margin: 0;
+  color: #888;
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.new-project-form-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.new-project-form-footer p {
+  max-width: 360px;
+  margin: 0;
+  color: #888;
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: right;
+}
+
+@media (max-width: 960px) {
+  .new-project-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .new-project-req-row {
+    grid-template-columns: 1fr 1fr 70px 36px;
+  }
+}

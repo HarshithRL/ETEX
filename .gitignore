@@ -1,0 +1,39 @@
+# Hidden directories (.venv, .cursor, .ruff_cache, .pytest_cache, .vscode, …)
+.*/
+
+# Keep this file tracked
+!.gitignore
+
+# Generated graphify artifacts
+graphify-out/
+
+# Application logs (root and nested, e.g. backend/logs)
+logs/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.Python
+
+# Node / frontend build
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+
+# Local env and secrets
+.env
+.env.*
+!.env.example
+*.pem
+credentials.json
+
+# Local databases and data dumps
+mate.sqlite
+mate.sqlite-*
+data/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
