@@ -23,3 +23,11 @@ class CorruptArtifact(ArtifactError):
 
 class ArtifactParseError(ArtifactError):
     """Parser failed while extracting content."""
+
+
+class ArtifactWriteError(ArtifactError):
+    """Writer failed while creating a file from an ArtifactSpec."""
+
+
+class ArtifactPatchError(ArtifactError, ValueError):
+    """Patch op is unknown, malformed, or does not match a block."""
