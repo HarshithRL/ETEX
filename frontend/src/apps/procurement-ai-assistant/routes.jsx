@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
-import Dashboard from "./pages/dashboard/Dashboard";
-import Projects from "./pages/projects/Projects";
+import Dashboard from "./pages/dashboard/dashboard";
+import Projects from "./pages/projects/projects";
 import NewProject from "./pages/new-project/NewProject";
 import NewProjectChat from "./pages/new-project/NewProjectChat";
 import NewProjectForm from "./pages/new-project/NewProjectForm";

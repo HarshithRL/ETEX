@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import { ThemeProvider } from "./components/theme/ThemeProvider";
 import { TooltipProvider } from "./components/ui/tooltip";
-import Hub from "./pages/hub/Hub";
+import Hub from "./pages/hub/hub";
 import ProcurementApp from "./apps/procurement-ai-assistant/App";
 
 import "./App.css";
