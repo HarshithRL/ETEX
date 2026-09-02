@@ -9,7 +9,7 @@ parse → document_to_spec → apply_ops_to_spec → write.
 import re
 from typing import Any
 
-from openpyxl.utils import column_index_from_string, coordinate_from_string
+from openpyxl.utils import coordinate_to_tuple
 
 from .exceptions import ArtifactPatchError
 from .models import ArtifactDocument, ArtifactType, BlockType, ContentBlock, SourceLocation
@@ -217,8 +217,7 @@ def parse_cell_ref(op: PatchOp) -> tuple[int, int]:
     if op.cell_range:
         coord = op.cell_range.split(":", 1)[0].strip().upper()
         try:
-            col_letter, row = coordinate_from_string(coord)
-            return int(row), int(column_index_from_string(col_letter))
+            return coordinate_to_tuple(coord)
         except Exception as exc:
             raise ArtifactPatchError(f"Invalid cell_range {op.cell_range!r}.") from exc
     if op.row is not None and op.col is not None:
