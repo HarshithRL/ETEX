@@ -4,6 +4,7 @@ from typing import Annotated, Literal, TypedDict
 
 from ai_brain.core.procurement_ai.capabilities import (
     COMPARE_XLSX,
+    EXTRACT,
     INGEST,
     KB_BUILD,
     STEERCO_PPT,
@@ -83,10 +84,12 @@ def procurement_on(state: dict) -> bool:
 
 def after_start(
     state: ProcuraState,
-) -> Literal["list_artifacts", "main_agent", "skip_main", "compare_xlsx", "steerco_ppt"]:
+) -> Literal["list_artifacts", "deepagent", "main_agent", "skip_main", "compare_xlsx", "steerco_ppt"]:
     capability = capability_from_state(state)
     if capability in {INGEST, KB_BUILD}:
         return "list_artifacts"
+    if capability == EXTRACT:
+        return "deepagent"
     if capability == COMPARE_XLSX:
         return "compare_xlsx"
     if capability == STEERCO_PPT:
@@ -141,6 +144,7 @@ def build_procura_ai(*, checkpointer=None):
         after_start,
         {
             "list_artifacts": "list_artifacts",
+            "deepagent": "deepagent",
             "main_agent": "main_agent",
             "skip_main": "skip_main",
             "compare_xlsx": "compare_xlsx",

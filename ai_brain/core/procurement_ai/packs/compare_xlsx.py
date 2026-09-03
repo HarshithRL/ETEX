@@ -8,7 +8,9 @@ from typing import Any
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 
+from ai_brain.core.procurement_ai.extraction import load_facts, overlay_insights, scan_chunks_for_facts
 from ai_brain.core.procurement_ai.packs import store
+from ai_brain.core.procurement_ai.project_context import load_context
 
 COVER_FIELDS = (
     ("FIELD_PROCESS_TYPE", "process_type"),
@@ -23,6 +25,13 @@ COVER_FIELDS = (
 
 def build_comparison_xlsx(project_id: str, insights: dict[str, Any], *, thread_id: str = "") -> dict[str, Any]:
     store.write_status(project_id, "xlsx", status="running", thread_id=thread_id or None)
+    chunks: list[Any] = []
+    try:
+        _project, _artifacts, chunks = load_context(project_id)
+    except Exception:  # noqa: BLE001
+        chunks = []
+    facts = load_facts(project_id) or scan_chunks_for_facts(insights, chunks)
+    insights = overlay_insights(insights, facts)
     filename = "comparison_matrix.xlsx"
     path = store.pack_file(project_id, filename)
     wb = Workbook()
@@ -31,6 +40,7 @@ def build_comparison_xlsx(project_id: str, insights: dict[str, Any], *, thread_i
     _write_cover(cover, insights)
     _write_vendors(wb.create_sheet("Vendors"), insights)
     _write_requirements(wb.create_sheet("Requirements"), insights)
+    _write_scorecard(wb.create_sheet("Scorecard"), insights)
     _write_tco(wb.create_sheet("TCO"), insights)
     _write_red_flags(wb.create_sheet("RedFlags"), insights)
     _write_field_map(wb.create_sheet("FieldMap"), insights)
@@ -87,20 +97,46 @@ def _write_requirements(ws, insights: dict[str, Any]) -> None:
 
 def _write_tco(ws, insights: dict[str, Any]) -> None:
     process = insights.get("process_type") or ""
-    _header_row(ws, ["Vendor", "External cost", "Internal days", "Internal €800/day", "TCO", "Source"])
+    _header_row(ws, ["Vendor", "External cost", "Internal days", "Day rate", "Internal €800/day", "TCO", "Source"])
     note = "P×Q — quote missing, do not write 0" if process == "direct_tg" else "Licence + impl or professional-services days — quote missing, do not write 0"
     vendors = insights.get("vendors") or []
     if not vendors:
         ws["A2"] = "No vendor column yet"
-        ws["E2"] = "missing"
+        ws["F2"] = "missing"
         return
     for index, vendor in enumerate(vendors, start=2):
+        evidence = vendor.get("evidence") or []
+        locator = evidence[0].get("locator") if evidence else "missing"
         ws[f"A{index}"] = vendor.get("name")
-        ws[f"B{index}"] = "missing"
-        ws[f"C{index}"] = "missing"
-        ws[f"D{index}"] = 800
-        ws[f"E{index}"] = "missing"
-        ws[f"F{index}"] = note
+        ws[f"B{index}"] = vendor.get("external_cost") or "missing"
+        ws[f"C{index}"] = vendor.get("internal_days") or "missing"
+        ws[f"D{index}"] = vendor.get("day_rate") or "missing"
+        ws[f"E{index}"] = 800
+        ws[f"F{index}"] = "missing"
+        ws[f"G{index}"] = locator if locator != "missing" else note
+    _autosize(ws)
+
+
+def _write_scorecard(ws, insights: dict[str, Any]) -> None:
+    extracted = (insights.get("requirements") or {}).get("extracted") or []
+    vendors = [v.get("name") for v in insights.get("vendors") or [] if v.get("name")]
+    headers = ["Req id", "Label", "Severity", *vendors, "Evidence"]
+    _header_row(ws, headers)
+    rows = extracted or (insights.get("requirements") or {}).get("items") or []
+    if not rows:
+        ws["A2"] = "No requirements extracted"
+        ws["B2"] = "missing"
+        return
+    for index, item in enumerate(rows, start=2):
+        ws[f"A{index}"] = item.get("id") or item.get("checklist_key")
+        ws[f"B{index}"] = item.get("label")
+        ws[f"C{index}"] = item.get("severity") or ""
+        status_map = item.get("vendor_status") or {}
+        for col, vendor in enumerate(vendors, start=4):
+            ws.cell(index, col, status_map.get(vendor) or item.get("status") or "missing")
+        evidence = item.get("evidence") or []
+        quote = evidence[0].get("locator") if evidence else item.get("needed") or ""
+        ws.cell(index, 4 + len(vendors), quote)
     _autosize(ws)
 
 
@@ -130,7 +166,7 @@ def _write_field_map(ws, insights: dict[str, Any]) -> None:
         ("FIELD_AWARD", "Cover", "B14"),
         ("FIELD_VENDOR_NAME", "Vendors", "A"),
         ("FIELD_VENDOR_HEADLINE", "Vendors", "E"),
-        ("FIELD_TCO", "TCO", "E"),
+        ("FIELD_TCO", "TCO", "F"),
     ]
     for index, row in enumerate(rows, start=2):
         ws[f"A{index}"] = row[0]

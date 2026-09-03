@@ -7,11 +7,12 @@ from typing import Any
 QA = "qa"
 INGEST = "ingest"
 KB_BUILD = "kb_build"
+EXTRACT = "extract"
 COMPARE_XLSX = "compare_xlsx"
 STEERCO_PPT = "steerco_ppt"
 
 PACK_CAPABILITIES = frozenset({COMPARE_XLSX, STEERCO_PPT})
-KNOWN = frozenset({QA, INGEST, KB_BUILD, COMPARE_XLSX, STEERCO_PPT})
+KNOWN = frozenset({QA, INGEST, KB_BUILD, EXTRACT, COMPARE_XLSX, STEERCO_PPT})
 
 
 def normalize_capability(raw: object) -> str:
@@ -32,6 +33,9 @@ def normalize_capability(raw: object) -> str:
         "kg": KB_BUILD,
         "knowledge": KB_BUILD,
         "pipeline": INGEST,
+        "extract": EXTRACT,
+        "facts": EXTRACT,
+        "deep": EXTRACT,
     }
     value = aliases.get(value, value)
     return value if value in KNOWN else ""
