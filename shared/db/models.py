@@ -1,4 +1,4 @@
-"""SQLAlchemy ORM models for Mate hub, users, projects, and artifacts."""
+"""SQLAlchemy ORM models for Mate hub, users, projects, artifacts, and chunks."""
 
 from __future__ import annotations
 
@@ -116,6 +116,7 @@ class Project(Base):
         back_populates="project",
         cascade="all, delete-orphan",
     )
+    chunks: Mapped[list[Chunk]] = relationship(back_populates="project")
 
 
 class Artifact(Base):
@@ -141,10 +142,50 @@ class Artifact(Base):
     content_type: Mapped[str | None] = mapped_column(String)
     size_bytes: Mapped[int | None] = mapped_column(Integer)
     storage_relpath: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    parsed_json: Mapped[str | None] = mapped_column(Text)
+    parse_status: Mapped[str | None] = mapped_column(String)
+    parse_error: Mapped[str | None] = mapped_column(Text)
+    parsed_relpath: Mapped[str | None] = mapped_column(String)
     created_at: Mapped[str] = mapped_column(String, nullable=False, default=utc_now_iso)
 
     project: Mapped[Project] = relationship(back_populates="artifacts")
     uploader: Mapped[AppUser] = relationship(back_populates="artifacts")
+    chunks: Mapped[list[Chunk]] = relationship(
+        back_populates="artifact",
+        cascade="all, delete-orphan",
+    )
+
+
+class Chunk(Base):
+    __tablename__ = "chunk"
+    __table_args__ = (
+        UniqueConstraint("artifact_id", "ordinal", name="uq_chunk_artifact_ordinal"),
+        Index("ix_chunk_project_id", "project_id"),
+        Index("ix_chunk_artifact_ordinal", "artifact_id", "ordinal"),
+    )
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    project_id: Mapped[str] = mapped_column(
+        String,
+        ForeignKey("project.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    artifact_id: Mapped[str] = mapped_column(
+        String,
+        ForeignKey("artifact.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    chunk_type: Mapped[str] = mapped_column(String, nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    token_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    heading_path_json: Mapped[str | None] = mapped_column(Text)
+    block_ids_json: Mapped[str | None] = mapped_column(Text)
+    location_json: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[str] = mapped_column(String, nullable=False, default=utc_now_iso)
+
+    project: Mapped[Project] = relationship(back_populates="chunks")
+    artifact: Mapped[Artifact] = relationship(back_populates="chunks")
 
 
 def identity_user_payload(user: dict[str, Any] | None) -> dict[str, str | None]:

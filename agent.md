@@ -165,17 +165,18 @@ Browser (5173)
   → GET /api/procurement/dashboard  → static KPIs from procurement_data.py
 ```
 
-### New-project intake chat (SSE)
+### New-project intake chat
 
 ```
 NewProjectChat.jsx
-  → apiPostSse("/agent/stream", { message, thread_id, route: "new_project" }, …, { base: AGENT_BASE })
-  → start_server.py :8000
-      graph.astream(..., subgraphs=True, stream_mode=["messages", "updates"])
-        route_intent → procure_ai → project_initiator create_agent → parse_draft
-  → SSE: updates | thought | token | usage | draft | done | error
-  → draft fills ProjectBriefForm (name + workflowEntryPoint required to create)
+  → follow-up cards (name + workflow, then business process) and/or composer
+  → POST /api/procurement/projects  { projectId, answered fields }
+      missing fields stored as "untitled"
+  → navigate /projects/:uuid?tab=workspace
+  → ChatPanel workspace SSE; agent JSON draft → PATCH project metadata
 ```
+
+Create only requires the existing project code (`GET /api/procurement/projects/next-code`). Name, workflow, and business process are collected on cards but are not required to open the workspace.
 
 ### Workspace chat (SSE)
 
@@ -200,7 +201,7 @@ ChatPanel.jsx
 | `thought` | `{ text }` | Intake: reasoning content blocks (if Gateway emits them) |
 | `token` | `{ text }` | Streaming LLM token chunk |
 | `usage` | `{ input_tokens, output_tokens, total_tokens }` | Intake: model usage_metadata |
-| `draft` | `{ name, category, region, requirements, brief }` | Intake: parsed JSON trailer |
+| `draft` | `{ name, workflowEntryPoint, … }` | Intake leftover / workspace: parsed JSON trailer applied via PATCH |
 | `done` | `{ role: "ai", text, usage?, draft? }` | Final assembled reply |
 | `error` | `{ detail }` | Validation or agent failure |
 
@@ -354,4 +355,4 @@ Query it: `graphify query "How does workspace chat flow work?"`
 
 ## Agent & skill registry
 
-Full routing matrix (MLflow, Databricks, LangChain MCP, react-doctor, shadcn, FE/BE subagents): **[`AGENTS.md`](AGENTS.md)**.
+Full routing matrix (MLflow, Databricks, LangChain MCP, react-expert / ia-react-frontend / javascript / typescript, react-doctor, shadcn, FE/BE subagents): **[`AGENTS.md`](AGENTS.md)**.

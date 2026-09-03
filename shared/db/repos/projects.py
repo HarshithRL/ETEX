@@ -17,6 +17,7 @@ from shared.db.paths import project_root
 from shared.db.seed import PROCUREMENT_MODULE_ID
 
 DEFAULT_PAGE_SIZE = 50
+UNTITLED = "untitled"
 
 WORKFLOW_ENTRY_POINTS = (
     "Sourcing",
@@ -41,10 +42,7 @@ def peek_next_code() -> str:
 
 
 def create(owner_id: str, payload: dict[str, Any], *, module_id: str = PROCUREMENT_MODULE_ID) -> Project:
-    name = str(payload.get("name") or "").strip()
-    if not name:
-        raise ProjectValidationError("name is required")
-
+    name = _text_or_untitled(payload.get("name"))
     workflow_entry_point = _validate_workflow_entry_point(payload.get("workflowEntryPoint"))
     business_process = _validate_business_process(payload.get("businessProcess"))
 
@@ -52,8 +50,6 @@ def create(owner_id: str, payload: dict[str, Any], *, module_id: str = PROCUREME
     requirements_json = None
     if isinstance(requirements, list):
         requirements_json = json.dumps(requirements)
-
-    category_raw = str(payload.get("category") or "").strip()
 
     with session_scope() as session:
         requested_code = payload.get("projectId") or payload.get("code")
@@ -67,15 +63,15 @@ def create(owner_id: str, payload: dict[str, Any], *, module_id: str = PROCUREME
             name=name,
             workflow_entry_point=workflow_entry_point,
             business_process=business_process,
-            requester=_optional_text(payload.get("requester")),
-            dept=_optional_text(payload.get("dept")),
-            category=category_raw or None,
-            region=_optional_text(payload.get("region")),
+            requester=_text_or_untitled(payload.get("requester")),
+            dept=_text_or_untitled(payload.get("dept")),
+            category=_text_or_untitled(payload.get("category")),
+            region=_text_or_untitled(payload.get("region")),
             status="Active",
             priority="Medium",
             budget=_format_budget(payload.get("targetSpend")),
-            award_horizon=_optional_text(payload.get("awardHorizon")),
-            description=_optional_text(payload.get("description")),
+            award_horizon=_text_or_untitled(payload.get("awardHorizon")),
+            description=_text_or_untitled(payload.get("description")),
             progress=0,
             deadline="—",
             requirements_json=requirements_json,
@@ -206,24 +202,39 @@ def update_for_owner(
             attr = api_key_map.get(key, key)
             if attr not in allowed:
                 continue
+            if attr == "name":
+                if not _is_real_value(value):
+                    continue
+                project.name = str(value).strip()
+                continue
             if attr == "workflow_entry_point":
+                if not _is_real_value(value):
+                    continue
                 project.workflow_entry_point = _validate_workflow_entry_point(value)
                 continue
             if attr == "business_process":
+                if not _is_real_value(value):
+                    continue
                 project.business_process = _validate_business_process(value)
                 continue
             if attr == "requirements":
-                if isinstance(value, list):
+                if isinstance(value, list) and value:
                     project.requirements_json = json.dumps(value)
                 continue
             if attr == "budget":
+                if not _is_real_value(value):
+                    continue
                 project.budget = _format_budget(value)
                 continue
             if attr == "progress" and value is not None:
                 project.progress = max(0, min(100, int(value)))
                 continue
             if attr in {"requester", "dept", "region", "award_horizon", "description", "category"}:
-                setattr(project, attr, _optional_text(value))
+                if not _is_real_value(value):
+                    continue
+                setattr(project, attr, str(value).strip())
+                continue
+            if not _is_real_value(value):
                 continue
             setattr(project, attr, value)
 
@@ -347,15 +358,20 @@ def _code_exists(session: Session, code: str) -> bool:
     return session.scalar(select(Project.id).where(Project.code == code)) is not None
 
 
-def _optional_text(value: object) -> str | None:
+def _text_or_untitled(value: object) -> str:
     text = str(value or "").strip()
-    return text or None
+    return text or UNTITLED
+
+
+def _is_real_value(value: object) -> bool:
+    text = str(value or "").strip()
+    return bool(text) and text.lower() != UNTITLED
 
 
 def _validate_workflow_entry_point(value: object) -> str:
     text = str(value or "").strip()
-    if not text:
-        raise ProjectValidationError("workflowEntryPoint is required")
+    if not text or text.lower() == UNTITLED:
+        return UNTITLED
     if text not in WORKFLOW_ENTRY_POINTS:
         raise ProjectValidationError(
             f"workflowEntryPoint must be one of: {', '.join(WORKFLOW_ENTRY_POINTS)}"
@@ -363,10 +379,10 @@ def _validate_workflow_entry_point(value: object) -> str:
     return text
 
 
-def _validate_business_process(value: object) -> str | None:
+def _validate_business_process(value: object) -> str:
     text = str(value or "").strip()
-    if not text:
-        return None
+    if not text or text.lower() == UNTITLED:
+        return UNTITLED
     if text not in BUSINESS_PROCESSES:
         raise ProjectValidationError(
             f"businessProcess must be one of: {', '.join(BUSINESS_PROCESSES)}"

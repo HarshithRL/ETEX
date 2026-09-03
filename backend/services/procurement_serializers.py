@@ -204,12 +204,22 @@ def workspace_payload(
 
 
 def chat_project_dict(project: Project) -> dict[str, Any]:
+    row = project_repo.project_to_dict(project)
     return {
-        "id": project.id,
-        "name": project.name,
-        "code": project.code,
-        "status": project.status,
-        "owner": project_repo.project_to_dict(project)["owner"],
+        "id": row["id"],
+        "name": row["name"],
+        "code": row["code"],
+        "status": row["status"],
+        "owner": row["owner"],
+        "workflowEntryPoint": row["workflowEntryPoint"],
+        "businessProcess": row["businessProcess"],
+        "category": row["category"],
+        "region": row["region"],
+        "requester": row["requester"],
+        "dept": row["dept"],
+        "description": row["description"],
+        "awardHorizon": row["awardHorizon"],
+        "targetSpend": row.get("budget") or "",
     }
 
 

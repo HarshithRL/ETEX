@@ -120,8 +120,7 @@ def test_pwc_design_pages_not_empty(handler: ArtifactHandler):
 def test_inetum_mixed_table_and_visual(handler: ArtifactHandler):
     path = _require(INETUM)
     doc = handler.parse(path)
-    kinds = {page.kind for page in doc.pages}
-    assert "mixed" in kinds or any(block.type == BlockType.TABLE for block in doc.blocks)
+    assert "mixed" not in {page.kind for page in doc.pages}
     assert any(block.type == BlockType.TABLE for block in doc.blocks)
     assert any(block.type in {BlockType.IMAGE, BlockType.CHART} for block in doc.blocks)
 
@@ -175,3 +174,49 @@ def test_graydon_optional_table_cap(handler: ArtifactHandler):
         and len(block.text.strip()) < 24
     ]
     assert len(page2_chips) <= 12
+
+
+def test_creditsafe_kpmg_pages(handler: ArtifactHandler):
+    path = _find_named("439819279")
+    doc = handler.parse(path)
+
+    page1_info = next(page for page in doc.pages if page.page == 1)
+    assert page1_info.kind == "dashboard"
+    page1 = [block for block in doc.blocks if block.location.page == 1]
+    assert len(page1) <= 30
+    assert any(
+        "Credit Limit" in block.text
+        and "1750000" in block.text.replace(" ", "").replace(",", "").replace(".", "")
+        for block in page1
+    )
+    assert any(
+        "International Score" in block.text and re.search(r"\bB\b", block.text)
+        for block in page1
+    )
+    assert not any("Printed By" in block.text for block in page1)
+    assert not any("Page 1 of 23" in block.text for block in page1)
+
+    page2_tables = [
+        block
+        for block in doc.blocks
+        if block.location.page == 2 and block.type == BlockType.TABLE
+    ]
+    assert any(
+        "99377231" in "".join(ch for ch in (block.text or "") if ch.isdigit())
+        for block in page2_tables
+    )
+    page2_chips = [
+        block
+        for block in doc.blocks
+        if block.location.page == 2
+        and block.type in {BlockType.TEXT, BlockType.HEADING}
+        and len(block.text.strip()) < 24
+    ]
+    assert len(page2_chips) <= 12
+
+    page19_headings = [
+        block
+        for block in doc.blocks
+        if block.location.page == 19 and block.type == BlockType.HEADING
+    ]
+    assert len(page19_headings) < 20

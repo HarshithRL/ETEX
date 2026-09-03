@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiGet } from "../../../../services/api";
+import CreateProjectDialog from "../new-project/CreateProjectDialog";
 import "./projects.css";
 
 function Projects() {
@@ -56,15 +57,7 @@ function Projects() {
             </p>
           </div>
 
-          <button
-            className="primary-button"
-            type="button"
-            onClick={() =>
-              navigate("/app/procurement-ai-assistant/projects/new")
-            }
-          >
-            + New Project
-          </button>
+          <CreateProjectDialog />
         </header>
 
         <section className="project-summary-grid">

@@ -1,87 +1,52 @@
-export const THREAD_KEY = "mate-intake-thread-id";
+export const OPENER = "Let’s start a sourcing project.";
 
-export const OPENER =
-  "Let’s start a sourcing project. What should we call it, and which workflow phase are you in — Sourcing, Vendor Comparison, or Contract Negotiation? I’ll fill the form as we go.";
+export const PROCESS_PROMPT = "Which business process is this buy?";
 
-export const initialStream = {
-  sending: false,
-  streamText: "",
-  thoughts: [],
-  pendingQuestion: "",
-  usage: null,
-  sendError: null,
-};
+export function intakeSeedKey(projectUuid) {
+  return `mate-intake-messages:${projectUuid}`;
+}
 
-export function intakeThreadId() {
-  if (typeof window === "undefined") {
-    return "intake";
-  }
+export function writeIntakeSeed(projectUuid, payload) {
   try {
-    const existing = sessionStorage.getItem(THREAD_KEY);
-    if (existing) {
-      return existing;
-    }
-    const created = crypto.randomUUID();
-    sessionStorage.setItem(THREAD_KEY, created);
-    return created;
+    sessionStorage.setItem(intakeSeedKey(projectUuid), JSON.stringify(payload));
   } catch {
-    return crypto.randomUUID();
+    /* ignore quota / private mode */
   }
 }
 
-export function streamReducer(state, action) {
-  switch (action.type) {
-    case "send_start":
-      return {
-        ...initialStream,
-        sending: true,
-      };
-    case "token":
-      return { ...state, streamText: action.text };
-    case "reasoning":
-    case "thought":
-      return {
-        ...state,
-        thoughts: [
-          ...state.thoughts,
-          { id: action.id, kind: "reasoning", text: action.text },
-        ],
-      };
-    case "question":
-      return {
-        ...state,
-        pendingQuestion: action.text,
-        streamText: state.streamText || action.text,
-      };
-    case "updates":
-      return {
-        ...state,
-        thoughts: [
-          ...state.thoughts,
-          { id: action.id, kind: "node", text: `Running ${action.node}` },
-        ],
-      };
-    case "usage":
-      return {
-        ...state,
-        usage: {
-          input_tokens: action.input_tokens ?? state.usage?.input_tokens ?? 0,
-          output_tokens: action.output_tokens ?? state.usage?.output_tokens ?? 0,
-          total_tokens: action.total_tokens ?? state.usage?.total_tokens ?? 0,
-        },
-      };
-    case "send_error":
-      return { ...state, sendError: action.error, sending: false };
-    case "send_done":
-      return {
-        ...state,
-        sending: false,
-        streamText: "",
-        sendError: null,
-        thoughts: [],
-        pendingQuestion: "",
-      };
-    default:
-      return state;
+export function readIntakeSeed(projectUuid) {
+  try {
+    const raw = sessionStorage.getItem(intakeSeedKey(projectUuid));
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function intakePendingSentKey(projectUuid) {
+  return `mate-intake-pending-sent:${projectUuid}`;
+}
+
+export function markIntakePendingSent(projectUuid) {
+  try {
+    sessionStorage.setItem(intakePendingSentKey(projectUuid), "1");
+  } catch {
+    /* ignore */
+  }
+  clearIntakePending(projectUuid);
+}
+
+export function wasIntakePendingSent(projectUuid) {
+  try {
+    return sessionStorage.getItem(intakePendingSentKey(projectUuid)) === "1";
+  } catch {
+    return false;
   }
 }

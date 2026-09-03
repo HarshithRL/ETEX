@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "typescript": {
+      "source": "pproenca/dot-skills",
+      "sourceType": "github",
+      "skillPath": "skills/.curated/typescript/SKILL.md",
+      "computedHash": "89f00ce25724f8ec8e0aab0c8d70d64e5fe8904dadb96896eaac622fdb7139ea"
+    }
+  }
+}

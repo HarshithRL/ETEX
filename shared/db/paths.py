@@ -29,5 +29,9 @@ def artifact_storage_relpath(project_id: str, artifact_id: str, original_name: s
     return f"{project_id}/uploads/{artifact_id}_{safe_name}"
 
 
+def parsed_storage_relpath(project_id: str, artifact_id: str) -> str:
+    return f"{project_id}/parsed/{artifact_id}.json"
+
+
 def artifact_absolute_path(storage_relpath: str) -> Path:
     return projects_data_root() / storage_relpath

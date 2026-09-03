@@ -12,6 +12,42 @@ import "./hub.css";
 
 const log = createLogger("pages.hub");
 
+const HIDDEN_HUB_TOOL_IDS = new Set(["accounting", "policy-search"]);
+const HIDDEN_HUB_TOOL_NAMES = new Set(["Accounting Assistant", "Policy Search"]);
+
+const HUB_TOOL_DISPLAY_NAMES = {
+  "document-builder": "Finance Agent",
+  "document-translator": "Supply chain agent",
+  "scope-builder": "Manufacturing agent",
+};
+
+function brandNameForDisplay(name) {
+  return name === "Mate" ? "Nexus" : name;
+}
+
+function categoriesForDisplay(categories) {
+  const visible = [];
+  for (const category of categories ?? []) {
+    const tools = [];
+    for (const tool of category.tools ?? []) {
+      if (
+        HIDDEN_HUB_TOOL_IDS.has(tool.id) ||
+        HIDDEN_HUB_TOOL_NAMES.has(tool.name)
+      ) {
+        continue;
+      }
+      tools.push({
+        ...tool,
+        name: HUB_TOOL_DISPLAY_NAMES[tool.id] ?? tool.name,
+      });
+    }
+    if (tools.length > 0) {
+      visible.push({ ...category, tools });
+    }
+  }
+  return visible;
+}
+
 function Hub() {
   const [page, setPage] = useState(null);
   const [error, setError] = useState(null);
@@ -76,7 +112,7 @@ function Hub() {
             <span className="brand-divider" />
 
             <span className="mate-name">
-              {page.brand.name}
+              {brandNameForDisplay(page.brand.name)}
             </span>
 
             <span className="mate-icon">
@@ -124,7 +160,7 @@ function Hub() {
             CATEGORIES
         ========================== */}
 
-        {page.categories.map((category) => (
+        {categoriesForDisplay(page.categories).map((category) => (
 
           <section
             key={category.name}

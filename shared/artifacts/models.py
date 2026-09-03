@@ -3,7 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from .chunking import DocumentChunk
 
 COORD_PDF_POINTS = "pdf_points_top_left"
 
@@ -71,7 +74,7 @@ class PageInfo:
     width: float
     height: float
     rotation: int = 0
-    kind: str = "mixed"
+    kind: str = "digital"
     mediabox: tuple[float, float, float, float] | None = None
 
     def to_dict(self) -> dict[str, Any]:
@@ -174,6 +177,7 @@ class ArtifactDocument:
     coord_system: str = ""
     pages: list[PageInfo] = field(default_factory=list)
     outline: list[OutlineItem] = field(default_factory=list)
+    chunks: list[DocumentChunk] = field(default_factory=list)
 
     def plain_text(self) -> str:
         return "\n\n".join(block.text for block in self.blocks if block.text.strip()).strip()

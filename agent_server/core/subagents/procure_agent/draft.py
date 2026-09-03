@@ -128,6 +128,11 @@ def _coerce_draft(raw: dict[str, Any]) -> ProjectDraft:
     return draft
 
 
+UNTITLED = "untitled"
+
+_SKIP_DRAFT_KEYS = {"brief"}
+
+
 def draft_has_meaningful_fields(draft: ProjectDraft | None) -> bool:
     if not draft:
         return False
@@ -136,6 +141,24 @@ def draft_has_meaningful_fields(draft: ProjectDraft | None) -> bool:
             continue
         return True
     return False
+
+
+def real_draft_fields(draft: ProjectDraft | None) -> dict[str, Any]:
+    """Return draft keys that are real values (not empty or untitled)."""
+    if not draft:
+        return {}
+    out: dict[str, Any] = {}
+    for key, value in draft.items():
+        if key in _SKIP_DRAFT_KEYS:
+            continue
+        if key == "requirements":
+            if value:
+                out[key] = value
+            continue
+        text = str(value or "").strip()
+        if text and text.lower() != UNTITLED:
+            out[key] = text
+    return out
 
 
 def validate_draft(draft: ProjectDraft | None) -> DraftValidation:

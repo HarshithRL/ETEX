@@ -1,4 +1,5 @@
 from .artifact_handler import ArtifactHandler
+from .chunking import ChunkOptions, DocumentChunk, chunk_document
 from .citations import citation_from_block
 from .exceptions import (
     ArtifactError,
@@ -15,6 +16,9 @@ __all__ = [
     "ArtifactDocument",
     "ArtifactType",
     "ParseOptions",
+    "ChunkOptions",
+    "DocumentChunk",
+    "chunk_document",
     "citation_from_block",
     "ArtifactError",
     "ArtifactNotFound",

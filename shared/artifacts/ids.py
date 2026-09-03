@@ -26,12 +26,12 @@ def make_block_id(
     sheet: str | None = None,
     extra_key: Any = None,
 ) -> str:
+    _ = text
     payload = "|".join(
         (
             block_type,
             "" if page is None else str(page),
             _bbox_key(bbox),
-            text,
             sheet or "",
             "" if extra_key is None else str(extra_key),
         )

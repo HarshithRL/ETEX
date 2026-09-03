@@ -67,6 +67,34 @@ def test_grid_rebuilds_aligned_cells():
     assert bbox[2] > bbox[0]
 
 
+def test_grid_keeps_year_columns():
+    years = ["2024", "2023", "2022", "2021", "2020"]
+    lines = [_line("Year to Date", 40, 40, 140, 54)]
+    for index, year in enumerate(years):
+        lines.append(_line(year, 160 + index * 80, 40, 230 + index * 80, 54))
+    lines.append(_line("Turnover", 40, 70, 140, 84))
+    amounts = [
+        "€99,377,231.6",
+        "€92,364,140",
+        "€75,261,345",
+        "€64,299,329",
+        "€60,858,911",
+    ]
+    for index, amount in enumerate(amounts):
+        lines.append(_line(amount, 160 + index * 80, 70, 230 + index * 80, 84))
+    lines.append(_line("Investments", 40, 100, 140, 114))
+    lines.append(_line("€815", 160 + 3 * 80, 100, 230 + 3 * 80, 114))
+    rebuilt = rebuild_table_from_lines(lines)
+    assert rebuilt is not None
+    matrix, bbox = rebuilt
+    flat = " ".join(cell for row in matrix for cell in row)
+    digits = "".join(ch for ch in flat if ch.isdigit())
+    assert "99377231" in digits
+    present = {cell.strip() for row in matrix for cell in row}
+    assert present.issuperset(years)
+    assert bbox[2] > bbox[0]
+
+
 def test_table_line_containment():
     table = (40.0, 40.0, 400.0, 300.0)
     cell = (50.0, 50.0, 90.0, 64.0)

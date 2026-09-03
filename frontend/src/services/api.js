@@ -116,8 +116,14 @@ function dispatchSseFrame(rawEvent, onEvent) {
  * POST and consume SSE (`text/event-stream`).
  * Calls `onEvent({ type, ...payload })` for each frame.
  * Accepts both LF and CRLF separators (sse-starlette defaults to CRLF).
+ * Pass `signal` from AbortController to cancel the stream.
  */
-export async function apiPostSse(path, body, onEvent, { base = API_BASE } = {}) {
+export async function apiPostSse(
+  path,
+  body,
+  onEvent,
+  { base = API_BASE, signal } = {},
+) {
   const response = await fetch(`${base}${path}`, {
     method: "POST",
     credentials: "include",
@@ -126,6 +132,7 @@ export async function apiPostSse(path, body, onEvent, { base = API_BASE } = {}) 
       Accept: "text/event-stream",
     },
     body: JSON.stringify(body ?? {}),
+    signal,
   }).then(captureRequestId);
 
   if (!response.ok) {
@@ -158,21 +165,39 @@ export async function apiPostSse(path, body, onEvent, { base = API_BASE } = {}) 
     while ((sep = buffer.indexOf("\n\n")) !== -1) {
       const rawEvent = buffer.slice(0, sep);
       buffer = buffer.slice(sep + 2);
-      dispatchSseFrame(rawEvent, onEvent);
+      if (!signal?.aborted) {
+        dispatchSseFrame(rawEvent, onEvent);
+      }
     }
   }
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      buffer += decoder.decode();
-      drainFrames();
-      if (buffer.trim()) {
-        dispatchSseFrame(buffer, onEvent);
+  try {
+    while (true) {
+      if (signal?.aborted) {
+        await reader.cancel();
+        throw new DOMException("Aborted", "AbortError");
       }
-      break;
+      const { done, value } = await reader.read();
+      if (done) {
+        buffer += decoder.decode();
+        drainFrames();
+        if (buffer.trim() && !signal?.aborted) {
+          dispatchSseFrame(buffer, onEvent);
+        }
+        break;
+      }
+      buffer += decoder.decode(value, { stream: true });
+      drainFrames();
     }
-    buffer += decoder.decode(value, { stream: true });
-    drainFrames();
+  } catch (err) {
+    if (err?.name === "AbortError") {
+      try {
+        await reader.cancel();
+      } catch {
+        /* already closed */
+      }
+      throw err;
+    }
+    throw err;
   }
 }

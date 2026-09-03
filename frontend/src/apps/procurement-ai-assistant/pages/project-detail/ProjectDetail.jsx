@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { apiGet } from "../../../../services/api";
 import OverviewTab from "./overview/OverviewTab";
 import WorkspaceTab from "./workspace/WorkspaceTab";
@@ -8,17 +8,49 @@ import "./project-detail.css";
 
 function ProjectDetail() {
   const { projectId } = useParams();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get("tab") || "overview";
+  const [activeTab, setActiveTab] = useState(tabFromUrl);
   const [shell, setShell] = useState(null);
   const [error, setError] = useState(null);
+  const loadedRef = useRef(false);
 
   useEffect(() => {
+    setActiveTab(tabFromUrl);
+  }, [tabFromUrl]);
+
+  const refreshShell = useCallback(() => {
+    if (!projectId) {
+      return;
+    }
+    apiGet(`/api/procurement/projects/${projectId}`)
+      .then((payload) => {
+        loadedRef.current = true;
+        setError(null);
+        setShell(payload);
+      })
+      .catch(() => {
+        if (!loadedRef.current) {
+          setError("Unable to load project.");
+        }
+      });
+  }, [projectId]);
+
+  useEffect(() => {
+    loadedRef.current = false;
     setShell(null);
     setError(null);
-    apiGet(`/api/procurement/projects/${projectId}`)
-      .then(setShell)
-      .catch(() => setError("Unable to load project."));
-  }, [projectId]);
+    refreshShell();
+  }, [projectId, refreshShell]);
+
+  function selectTab(tabId) {
+    setActiveTab(tabId);
+    if (tabId === "overview") {
+      setSearchParams({}, { replace: true });
+      return;
+    }
+    setSearchParams({ tab: tabId }, { replace: true });
+  }
 
   if (!shell && !error) {
     return (
@@ -80,7 +112,7 @@ function ProjectDetail() {
             <button
               type="button"
               className="secondary-button"
-              onClick={() => setActiveTab("workspace")}
+              onClick={() => selectTab("workspace")}
             >
               Open Workspace
             </button>
@@ -96,7 +128,7 @@ function ProjectDetail() {
               key={tab.id}
               type="button"
               className={`project-tab${activeTab === tab.id ? " active" : ""}`}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => selectTab(tab.id)}
             >
               {tab.label}
             </button>
@@ -108,7 +140,10 @@ function ProjectDetail() {
             <OverviewTab projectId={projectId} />
           )}
           {activeTab === "workspace" && (
-            <WorkspaceTab projectId={projectId} />
+            <WorkspaceTab
+              projectId={projectId}
+              onProjectUpdated={refreshShell}
+            />
           )}
           {activeTab === "documents" && (
             <DocumentsTab projectId={projectId} />

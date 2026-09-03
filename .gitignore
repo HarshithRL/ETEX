@@ -4,6 +4,16 @@
 # Keep this file tracked
 !.gitignore
 
+# Project frontend/agent skills (Cursor + skills CLI)
+!.cursor/
+.cursor/*
+!.cursor/skills/
+!.cursor/skills/**
+!.agents/
+.agents/*
+!.agents/skills/
+!.agents/skills/**
+
 # Generated graphify artifacts
 graphify-out/
 
@@ -31,6 +41,8 @@ credentials.json
 # Local databases and data dumps
 mate.sqlite
 mate.sqlite-*
+mlflow.db
+mlruns/
 data/
 
 # OS / editor

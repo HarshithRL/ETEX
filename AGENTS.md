@@ -21,7 +21,7 @@
 |-----------|-----------|------|
 | Where code lives, cross-module flow, architecture | **graphify** `query` | grep/read files graph points to |
 | Exact symbol, line proof, edge-case implementation | **grep** / **Read** | — |
-| React pages, components, UX, a11y, visual quality | **senior-frontend-developer** subagent | **react-doctor** after edits |
+| React pages, components, UX, a11y, visual quality | **react-expert** + **ia-react-frontend** SKILL.md | **javascript** / **typescript** by file type → **senior-frontend-developer** → **shadcn** → **react-doctor** |
 | Flask routes, services, APIs, agent orchestration, persistence | **senior-backend-developer** subagent | graphify for flow context |
 | LangChain / LangGraph / DeepAgents patterns & API | **LangChain MCP** (`docs-langchain` + `reference-langchain`) | read `agent_server/` |
 | MLflow (tracing, eval, debug, metrics) | **mlflow-agent** → dispatches sub-skill | see MLflow table below |
@@ -100,11 +100,20 @@ Profile: `adb-7181820732839861`. Deploy target: **Databricks Apps** (Linux).
 
 ## Frontend agents & tools
 
+On **any** frontend work, read the matching project skills **before** coding. Open `SKILL.md` first; load a `references/` file only for the topic at hand.
+
+| Skill | Path | Use when |
+|-------|------|----------|
+| **react-expert** | `.cursor/skills/react-expert/` | React 19 components, hooks, state, performance |
+| **ia-react-frontend** | `.cursor/skills/ia-react-frontend/` | Effects decision tree, component structure, RTL/Vitest |
+| **javascript** | `.cursor/skills/javascript/` | `.js` / `.jsx` language, async, modules, JSDoc |
+| **typescript** | `.cursor/skills/typescript/` | `.ts` / `.tsx`, tsconfig, type errors, TS performance |
+
+**Mate stack wins** over Next.js App Router / RSC / Zustand examples in those packs unless the file already uses them. Stack: React 19, Vite 8, React Router 7, GSAP, `frontend/src/services/api.js`, shadcn (Nova) where `frontend/components.json` applies. Prefer existing `.jsx`/`.js`; do not convert to TypeScript unless asked.
+
 ### senior-frontend-developer (subagent)
 
-**Invoke for:** React 19 + Vite SPA work, procurement UI, hub pages, GSAP motion, SSE chat UI, a11y, Web Vitals, design-quality review.
-
-**Mate stack:** React Router 7, custom CSS (no Tailwind/shadcn yet), GSAP, `frontend/src/services/api.js`.
+**Invoke for:** React 19 + Vite SPA work, procurement UI, hub pages, GSAP motion, SSE chat UI, a11y, Web Vitals, design-quality review. **Read the skill packs above first.**
 
 **Not for:** Flask/Python — use senior-backend-developer.
 
@@ -148,7 +157,7 @@ Say **hey buddy**, **buddy**, or **dude**. Owns end-to-end increments; delegates
 | Goal | Route |
 |------|-------|
 | Wire document upload | graphify query → senior-backend-developer → parser in `agent_server/file_handler/parser/` |
-| Vendor comparison UI | graphify query → senior-frontend-developer → react-doctor |
+| Vendor comparison UI | graphify query → react-expert + ia-react-frontend → senior-frontend-developer → react-doctor |
 | Workspace chat bug | graphify query → analyze-mlflow-trace (when traced) or grep `procurement_chat.py` |
 | Add MLflow tracing | mlflow-agent → instrumenting-with-mlflow-tracing |
 | Deploy to Databricks Apps | databricks-core → databricks-apps + databricks-dabs |

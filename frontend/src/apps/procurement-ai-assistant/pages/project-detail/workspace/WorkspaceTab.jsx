@@ -1,26 +1,140 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
+
 import { apiGet } from "../../../../../services/api";
+import {
+  markIntakePendingSent,
+  readIntakeSeed,
+  wasIntakePendingSent,
+} from "../../new-project/intakeChat";
+import {
+  FILE_ACCEPT,
+  addStagedFiles,
+} from "../../new-project/stagedFiles";
+import {
+  summarizeUploadResult,
+  uploadProjectFiles,
+} from "../../new-project/uploadProjectFiles";
 import FileExplorer from "./components/FileExplorer";
 import ChatPanel from "./components/ChatPanel";
 import StudioPanel from "./components/StudioPanel";
 import "./workspace-tab.css";
 
-function WorkspaceTab({ projectId }) {
+function seedFromLocation(projectId, locationState) {
+  const pendingAlreadySent = wasIntakePendingSent(projectId);
+  if (Array.isArray(locationState?.intakeMessages) && locationState.intakeMessages.length > 0) {
+    return {
+      messages: locationState.intakeMessages,
+      pendingMessage: pendingAlreadySent ? "" : locationState.pendingMessage || "",
+    };
+  }
+  const stored = readIntakeSeed(projectId);
+  if (Array.isArray(stored?.messages) && stored.messages.length > 0) {
+    return {
+      messages: stored.messages,
+      pendingMessage: pendingAlreadySent ? "" : stored.pendingMessage || "",
+    };
+  }
+  return null;
+}
+
+function WorkspaceTab({ projectId, onProjectUpdated }) {
+  const location = useLocation();
+  const fileInputRef = useRef(null);
   const [data, setData] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [pendingMessage, setPendingMessage] = useState("");
   const [error, setError] = useState(null);
+  const [uploadUi, setUploadUi] = useState({
+    uploading: false,
+    error: null,
+    status: null,
+  });
 
   useEffect(() => {
     setData(null);
     setMessages([]);
+    setPendingMessage("");
     setError(null);
+    setUploadUi({ uploading: false, error: null, status: null });
     apiGet(`/api/procurement/projects/${projectId}/workspace`)
       .then((payload) => {
         setData(payload);
-        setMessages(payload.chatMessages ?? []);
+        const seed = seedFromLocation(projectId, location.state);
+        if (seed) {
+          setMessages(
+            seed.messages.map((msg) => ({
+              role: msg.role,
+              text: msg.text,
+            })),
+          );
+          setPendingMessage(seed.pendingMessage || "");
+        } else {
+          setMessages(payload.chatMessages ?? []);
+        }
       })
       .catch(() => setError("Unable to load workspace."));
-  }, [projectId]);
+  }, [projectId, location.state]);
+
+  function consumePending() {
+    setPendingMessage("");
+    markIntakePendingSent(projectId);
+  }
+
+  function refreshFiles() {
+    return apiGet(`/api/procurement/projects/${projectId}/workspace`).then((payload) => {
+      setData((prev) =>
+        prev
+          ? { ...prev, files: payload.files, storage: payload.storage }
+          : payload,
+      );
+    });
+  }
+
+  function openFilePicker() {
+    if (uploadUi.uploading) {
+      return;
+    }
+    fileInputRef.current?.click();
+  }
+
+  async function handleFilesSelected(event) {
+    const incoming = Array.from(event.target.files || []);
+    event.target.value = "";
+    const { files, errors } = addStagedFiles([], incoming);
+    if (errors.length) {
+      setUploadUi({
+        uploading: false,
+        error: errors.join(" "),
+        status: null,
+      });
+      return;
+    }
+    if (!files.length) {
+      return;
+    }
+
+    setUploadUi({ uploading: true, error: null, status: "Uploading…" });
+    try {
+      const result = await uploadProjectFiles(projectId, files);
+      try {
+        await refreshFiles();
+      } catch {
+        /* upload succeeded; sidebar refresh is best-effort */
+      }
+      setUploadUi({
+        uploading: false,
+        error: null,
+        status: summarizeUploadResult(result.uploaded),
+      });
+    } catch (err) {
+      setUploadUi({
+        uploading: false,
+        error: err?.message || "Unable to upload files.",
+        status: null,
+      });
+    }
+  }
 
   if (!data && !error) {
     return <div className="workspace-tab">Loading…</div>;
@@ -34,12 +148,33 @@ function WorkspaceTab({ projectId }) {
 
   return (
     <div className="workspace-tab">
-      <FileExplorer files={data.files} storage={data.storage} />
+      <input
+        ref={fileInputRef}
+        id="ws-project-file-input"
+        type="file"
+        accept={FILE_ACCEPT}
+        multiple
+        hidden
+        onChange={handleFilesSelected}
+      />
+      <FileExplorer
+        files={data.files}
+        storage={data.storage}
+        uploading={uploadUi.uploading}
+        onAddFile={openFilePicker}
+      />
       <ChatPanel
         projectId={projectId}
         messages={messages}
         userInitial={data.userInitial}
+        pendingMessage={pendingMessage}
+        onPendingConsumed={consumePending}
         onMessagesChange={setMessages}
+        onProjectUpdated={onProjectUpdated}
+        onAddFile={openFilePicker}
+        uploading={uploadUi.uploading}
+        uploadError={uploadUi.error}
+        uploadStatus={uploadUi.status}
       />
       <StudioPanel
         projectName={data.projectName}

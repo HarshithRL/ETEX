@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "ia-react-frontend",
+  "owner": "iliaal",
+  "repo": "whetstone",
+  "path": "plugins/whetstone/skills/ia-react-frontend",
+  "branch": "master",
+  "sha": "a58b9d57a6398093d20ba1bed472db96c2fe044b",
+  "source": "manual"
+}

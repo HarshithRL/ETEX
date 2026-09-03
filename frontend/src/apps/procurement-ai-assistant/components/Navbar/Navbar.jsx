@@ -71,7 +71,7 @@ function Navbar() {
             />
 
             <span className="navbar-mate">
-              Mate
+              Nexus
             </span>
           </Link>
         </div>

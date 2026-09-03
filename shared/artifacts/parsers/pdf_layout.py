@@ -83,6 +83,10 @@ def sort_reading_lines(lines: list[LayoutLine]) -> list[LayoutLine]:
     return sorted(lines, key=lambda line: (round(line.bbox[1] / 12), line.bbox[0]))
 
 
+_KPI_SCORE = re.compile(r"\b[A-E][+-]?\b|\b\d-\b|\b\d+\.\d{2}\b")
+_YEAR_TOKEN = re.compile(r"\b((?:19|20)\d{2})\b")
+
+
 class PdfPageClassifier:
     def classify(self, page) -> str:
         text = (page.get_text("text") or "").strip()
@@ -101,6 +105,8 @@ class PdfPageClassifier:
         if n_chars < 120 and n_images >= 1:
             return "design"
 
+        year_grid = _looks_like_year_grid(text, short, n_lines)
+        kpi_cover = _looks_like_kpi_cover(text, short, long, n_lines, n_tables)
         dashboard = (
             n_tables <= 1
             and n_lines >= 10
@@ -114,26 +120,24 @@ class PdfPageClassifier:
             and long <= 1
             and (n_vectors >= 50 or n_images >= 1)
         )
+        if year_grid:
+            return "table"
         if dashboard and chart:
             if short >= 12 and n_chars >= 300:
                 return "dashboard"
             return "chart"
-        if dashboard:
+        if dashboard or kpi_cover:
             return "dashboard"
         if chart:
             return "chart"
 
         if n_tables >= 2 or (n_vectors > 40 and n_chars < 1500):
             return "table"
-        if n_chars >= 200 and n_images == 0 and n_tables == 0:
-            return "digital"
-        if n_tables:
-            return "mixed" if n_chars >= 200 else "table"
-        if n_chars >= 200:
-            return "mixed" if n_images else "digital"
+        if n_tables and n_chars < 200:
+            return "table"
         if n_chars == 0:
             return "scanned"
-        return "mixed"
+        return "digital"
 
     @staticmethod
     def _line_profile(page) -> tuple[int, int, int, int]:
@@ -161,3 +165,21 @@ class PdfPageClassifier:
                 bbox = line.get("bbox") or (0, 0, 0, 0)
                 xs.add(int(round(float(bbox[0]) / 40.0)))
         return short, long, len(xs), count
+
+
+def _looks_like_kpi_cover(
+    text: str, short: int, long: int, n_lines: int, n_tables: int
+) -> bool:
+    if n_tables > 1 or n_lines < 8 or short < 8 or long > 8:
+        return False
+    has_currency = any(ch in text for ch in "€$£")
+    has_score = bool(_KPI_SCORE.search(text))
+    return has_currency or has_score
+
+
+def _looks_like_year_grid(text: str, short: int, n_lines: int) -> bool:
+    years = sorted({int(match.group(1)) for match in _YEAR_TOKEN.finditer(text)})
+    if len(years) < 3 or n_lines < 8 or short < 8:
+        return False
+    consecutive = sum(1 for a, b in zip(years, years[1:]) if b - a == 1)
+    return consecutive >= 2

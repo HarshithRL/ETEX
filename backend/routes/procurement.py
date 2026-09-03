@@ -10,6 +10,7 @@ from shared.db.repos.projects import ProjectNotFoundError, ProjectValidationErro
 from shared.db.repos.users import get_user
 from shared.logger_global import bind_context, get_logger
 from services import procurement_chat
+from services.artifact_parse import parse_and_store
 from services.procurement_serializers import (
     dashboard_payload,
     documents_payload,
@@ -183,11 +184,14 @@ def upload_project_files(project_id):
                 ),
                 folder=folder,
             )
+            parsed = parse_and_store(artifact)
             created.append(
                 {
-                    "id": artifact.id,
-                    "name": artifact.original_name,
-                    "folder": artifact.folder,
+                    "id": parsed.id,
+                    "name": parsed.original_name,
+                    "folder": parsed.folder,
+                    "parseStatus": parsed.parse_status,
+                    "parseError": parsed.parse_error,
                 }
             )
     except ProjectNotFoundError:

@@ -85,16 +85,27 @@ _PROJECT_COLUMN_MIGRATIONS: tuple[tuple[str, str], ...] = (
     ("dept", "TEXT"),
 )
 
+_ARTIFACT_COLUMN_MIGRATIONS: tuple[tuple[str, str], ...] = (
+    ("parsed_json", "TEXT"),
+    ("parse_status", "TEXT"),
+    ("parse_error", "TEXT"),
+    ("parsed_relpath", "TEXT"),
+)
 
-def _ensure_project_columns(engine: Engine) -> None:
+
+def _ensure_table_columns(
+    engine: Engine,
+    table_name: str,
+    migrations: tuple[tuple[str, str], ...],
+) -> None:
     with engine.connect() as conn:
-        rows = conn.execute(text("PRAGMA table_info(project)")).fetchall()
+        rows = conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
         existing = {row[1] for row in rows}
-        for column_name, column_type in _PROJECT_COLUMN_MIGRATIONS:
+        for column_name, column_type in migrations:
             if column_name in existing:
                 continue
             conn.execute(
-                text(f"ALTER TABLE project ADD COLUMN {column_name} {column_type}")
+                text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}")
             )
         conn.commit()
 
@@ -105,6 +116,7 @@ def init_db() -> None:
 
     engine = get_engine()
     Base.metadata.create_all(bind=engine)
-    _ensure_project_columns(engine)
+    _ensure_table_columns(engine, "project", _PROJECT_COLUMN_MIGRATIONS)
+    _ensure_table_columns(engine, "artifact", _ARTIFACT_COLUMN_MIGRATIONS)
     with session_scope() as session:
         seed_hub_modules(session)

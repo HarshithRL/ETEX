@@ -1,11 +1,9 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
-import Dashboard from "./pages/dashboard/Dashboard";
-import Projects from "./pages/projects/Projects";
-import NewProject from "./pages/new-project/NewProject";
-import NewProjectChat from "./pages/new-project/NewProjectChat";
-import NewProjectForm from "./pages/new-project/NewProjectForm";
+import Dashboard from "./pages/dashboard/dashboard";
+import Projects from "./pages/projects/projects";
 import ProjectDetail from "./pages/project-detail/ProjectDetail";
+import { PROJECTS_LIST_PATH } from "./pages/new-project/paths";
 
 function AppRoutes() {
   return (
@@ -36,17 +34,17 @@ function AppRoutes() {
 
       <Route
         path="/projects/new"
-        element={<NewProject />}
+        element={<Navigate to={PROJECTS_LIST_PATH} replace />}
       />
 
       <Route
         path="/projects/new/chat"
-        element={<NewProjectChat />}
+        element={<Navigate to={PROJECTS_LIST_PATH} replace />}
       />
 
       <Route
         path="/projects/new/form"
-        element={<NewProjectForm />}
+        element={<Navigate to={PROJECTS_LIST_PATH} replace />}
       />
 
       {/* Project detail */}

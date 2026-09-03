@@ -2,15 +2,23 @@ import { useEffect, useState } from "react";
 
 import { fetchNextProjectCode } from "./createProject";
 
-export function useNextProjectCode() {
+export function useNextProjectCode(enabled = true) {
   const [projectId, setProjectId] = useState("");
-  const [loadingProjectId, setLoadingProjectId] = useState(true);
+  const [loadingProjectId, setLoadingProjectId] = useState(Boolean(enabled));
   const [loadError, setLoadError] = useState(null);
 
   useEffect(() => {
+    if (!enabled) {
+      setProjectId("");
+      setLoadingProjectId(false);
+      setLoadError(null);
+      return undefined;
+    }
+
     let cancelled = false;
     async function loadProjectId() {
       setLoadingProjectId(true);
+      setProjectId("");
       try {
         const code = await fetchNextProjectCode();
         if (!cancelled) {
@@ -24,16 +32,14 @@ export function useNextProjectCode() {
           );
         }
       } finally {
-        if (!cancelled) {
-          setLoadingProjectId(false);
-        }
+        setLoadingProjectId(false);
       }
     }
     loadProjectId();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [enabled]);
 
   return { projectId, loadingProjectId, loadError };
 }

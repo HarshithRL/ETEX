@@ -1,0 +1,5 @@
+# Experimental brain rewrite — excluded from the knowledge graph on request
+ai_brain/
+
+# graphify's own outputs must never re-enter the corpus
+graphify-out/

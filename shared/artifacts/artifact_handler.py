@@ -66,6 +66,9 @@ class ArtifactHandler:
             from ._markdown_convertor import MarkdownConvertor
 
             document.markdown = MarkdownConvertor().convert(document).rstrip("\n")
+            from .chunking import chunk_document
+
+            document.chunks = chunk_document(document)
             return document
         except (ArtifactNotFound, UnsupportedArtifact, EncryptedArtifact, CorruptArtifact, ArtifactParseError):
             raise

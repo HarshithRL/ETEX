@@ -1,6 +1,6 @@
 export const MAX_FILE_BYTES = 40 * 1024 * 1024;
-export const ALLOWED_EXTENSIONS = [".pdf", ".docx", ".xlsx"];
-export const FILE_ACCEPT = ".pdf,.docx,.xlsx";
+export const ALLOWED_EXTENSIONS = [".pdf", ".docx", ".xlsx", ".pptx"];
+export const FILE_ACCEPT = ".pdf,.docx,.xlsx,.pptx";
 
 export function isAllowedFile(file) {
   const name = (file.name || "").toLowerCase();
@@ -9,7 +9,7 @@ export function isAllowedFile(file) {
 
 export function validateStagedFile(file) {
   if (!isAllowedFile(file)) {
-    return "Use PDF, DOCX, or XLSX files.";
+    return "Use PDF, DOCX, XLSX, or PPTX files.";
   }
   if (file.size > MAX_FILE_BYTES) {
     return "Each file must be 40 MB or smaller.";

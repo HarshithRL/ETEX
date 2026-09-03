@@ -10,12 +10,15 @@ _HEADER_NOISE = re.compile(
     r"etex\s+group(\s*[|I]\s*\d+)?"
     r"|confidential"
     r"|printed\s+on(\s*[:.].*)?"
+    r"|printed\s+by(\s*[:.].*)?"
     r"|page\s+\d+(\s+of\s+\d+)?"
     r"|page\s+\d+\s*/\s*\d+"
     r"|\d+\s*/\s*\d+"
     r"|\d{1,3}"
     r")$"
 )
+_PRINTED_BY = re.compile(r"(?i)\bprinted\s+by\b")
+_COMPANY_PRINTED_BY = re.compile(r"(?i)\bcompany\s*:.*\bprinted\s+by\b")
 
 
 def chrome_key(text: str) -> str:
@@ -31,7 +34,9 @@ def is_header_noise(text: str) -> bool:
     lowered = chrome_key(stripped)
     if lowered.startswith("etex group i") or lowered.startswith("etex group |"):
         return True
-    if lowered.startswith("printed on"):
+    if lowered.startswith("printed on") or lowered.startswith("printed by"):
+        return True
+    if _PRINTED_BY.search(stripped) or _COMPANY_PRINTED_BY.search(stripped):
         return True
     if re.match(r"(?i)^page\s+\d+(\s+of\s+\d+)?$", lowered):
         return True

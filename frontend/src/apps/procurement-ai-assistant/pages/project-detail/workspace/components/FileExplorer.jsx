@@ -1,9 +1,16 @@
-function FileExplorer({ files, storage }) {
+function FileExplorer({ files, storage, onAddFile, uploading = false }) {
   return (
     <aside className="ws-files">
       <div className="ws-panel-header">
         <strong>PROJECT FILES</strong>
-        <button type="button" aria-label="Add file">＋</button>
+        <button
+          type="button"
+          aria-label="Add file"
+          onClick={onAddFile}
+          disabled={uploading || !onAddFile}
+        >
+          ＋
+        </button>
       </div>
 
       <div className="ws-file-search">

@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "javascript",
+  "owner": "xobotyi",
+  "repo": "cc-foundry",
+  "path": "plugins/javascript/skills/javascript",
+  "branch": "master",
+  "sha": "1bb6a17f123cf84537052953a119d5aa8ec36074",
+  "source": "manual"
+}

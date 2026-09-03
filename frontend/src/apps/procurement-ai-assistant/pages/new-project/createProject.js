@@ -1,5 +1,6 @@
-import { apiGet, apiPost, apiPostForm } from "../../../../services/api";
+import { apiGet, apiPost } from "../../../../services/api";
 import { PROJECTS_LIST_PATH } from "./paths";
+import { uploadProjectFiles } from "./uploadProjectFiles";
 
 export async function fetchNextProjectCode() {
   const data = await apiGet("/api/procurement/projects/next-code");
@@ -10,11 +11,7 @@ export async function createProject(payload, files = []) {
   const created = await apiPost("/api/procurement/projects", payload);
 
   if (files.length > 0) {
-    const formData = new FormData();
-    for (const file of files) {
-      formData.append("files", file);
-    }
-    await apiPostForm(`/api/procurement/projects/${created.id}/files`, formData);
+    await uploadProjectFiles(created.id, files);
   }
 
   return {

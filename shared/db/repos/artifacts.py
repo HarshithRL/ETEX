@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from shared.db.connection import session_scope
 from shared.db.models import Artifact, utc_now_iso
-from shared.db.paths import artifact_absolute_path, artifact_storage_relpath, project_root
+from shared.db.paths import artifact_absolute_path, artifact_storage_relpath
 from shared.db.repos.projects import ProjectNotFoundError, _get_for_owner
 from shared.db.seed import PROCUREMENT_MODULE_ID
 
@@ -85,6 +85,27 @@ def create_upload(
         return artifact
 
 
+def save_parse_result(
+    artifact_id: str,
+    *,
+    parse_status: str,
+    parse_error: str | None = None,
+    parsed_json: str | None = None,
+    parsed_relpath: str | None = None,
+) -> Artifact:
+    with session_scope() as session:
+        artifact = session.get(Artifact, artifact_id)
+        if artifact is None:
+            raise ArtifactNotFoundError(artifact_id)
+        artifact.parse_status = parse_status
+        artifact.parse_error = parse_error
+        artifact.parsed_json = parsed_json
+        artifact.parsed_relpath = parsed_relpath
+        session.flush()
+        session.expunge(artifact)
+        return artifact
+
+
 def create_uploads(
     project_id: str,
     owner_id: str,
@@ -137,12 +158,17 @@ def delete_for_owner(
             raise ArtifactNotFoundError(artifact_id)
 
         relpath = artifact.storage_relpath
+        parsed_relpath = artifact.parsed_relpath
         session.delete(artifact)
         session.flush()
 
     absolute = artifact_absolute_path(relpath)
     if absolute.exists():
         absolute.unlink(missing_ok=True)
+    if parsed_relpath:
+        parsed_path = artifact_absolute_path(parsed_relpath)
+        if parsed_path.exists():
+            parsed_path.unlink(missing_ok=True)
 
 
 def total_bytes_for_project(project_id: str) -> int:

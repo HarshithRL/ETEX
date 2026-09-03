@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { apiGet } from "../../../../services/api";
+import CreateProjectDialog from "../new-project/CreateProjectDialog";
 import "./dashboard.css";
 
 function Dashboard() {
-  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
 
@@ -51,15 +50,7 @@ function Dashboard() {
             </p>
           </div>
 
-          <button
-            className="primary-button"
-            type="button"
-            onClick={() =>
-              navigate("/app/procurement-ai-assistant/projects/new")
-            }
-          >
-            + New Project
-          </button>
+          <CreateProjectDialog />
         </header>
 
         <section className="dashboard-kpis">

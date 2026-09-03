@@ -1,5 +1,17 @@
-import { useReducer } from "react";
-import { apiPostSse } from "../../../../../../services/api";
+import { MessageSquare } from "lucide-react";
+
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+
+import ChatAttachMenu from "./ChatAttachMenu";
+import ChatMarkdown from "./ChatMarkdown";
+import ChatThoughtProcess from "./ChatThoughtProcess";
+import { useWorkspaceChatStream } from "./useWorkspaceChatStream";
 
 const CENTER_TABS = [
   "Chat",
@@ -9,137 +21,152 @@ const CENTER_TABS = [
   "Preview",
 ];
 
-const initialChatUi = {
-  tab: "Chat",
-  draft: "",
-  sending: false,
-  sendError: null,
-  streamText: "",
-  contextEvents: [],
-};
-
-function chatUiReducer(state, action) {
-  switch (action.type) {
-    case "set_tab":
-      return { ...state, tab: action.tab };
-    case "set_draft":
-      return { ...state, draft: action.draft };
-    case "send_start":
-      return {
-        ...state,
-        draft: "",
-        sendError: null,
-        sending: true,
-        streamText: "",
-        contextEvents: [],
-      };
-    case "token":
-      return { ...state, streamText: action.text };
-    case "context":
-      return {
-        ...state,
-        contextEvents: [
-          ...state.contextEvents,
-          { label: action.label, detail: action.detail },
-        ],
-      };
-    case "send_error":
-      return { ...state, sendError: action.error, sending: false };
-    case "send_done":
-      return {
-        ...state,
-        sending: false,
-        streamText: "",
-        contextEvents: [],
-      };
-    default:
-      return state;
-  }
-}
-
 function messageKey(msg, index) {
   const prefix = msg.role === "user" ? "u" : "a";
   const snippet = (msg.text || "").slice(0, 48);
   return `${prefix}-${index}-${snippet}`;
 }
 
-function ChatPanel({ projectId, messages, userInitial, onMessagesChange }) {
-  const [ui, dispatch] = useReducer(chatUiReducer, initialChatUi);
+function ChatAiBody({
+  thoughts,
+  text,
+  streaming = false,
+  durationMs = null,
+  points,
+  sources,
+}) {
+  return (
+    <div className="ws-chat-ai-body" aria-live={streaming ? "polite" : undefined}>
+      <ChatThoughtProcess
+        thoughts={thoughts}
+        live={streaming}
+        durationMs={durationMs}
+      />
+      <ChatMarkdown text={text} streaming={streaming} />
+      {points ? (
+        <ul>
+          {points.map((point) => (
+            <li key={point}>{point}</li>
+          ))}
+        </ul>
+      ) : null}
+      {sources ? (
+        <div className="ws-sources">
+          {sources.map((source) => (
+            <span key={source}>{source}</span>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function CenterTabs({ tab, onTab }) {
+  return (
+    <div className="ws-center-tabs">
+      {CENTER_TABS.map((name) => (
+        <button
+          key={name}
+          type="button"
+          className={tab === name ? "active" : ""}
+          onClick={() => onTab(name)}
+        >
+          {name}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ChatComposer({
+  draft,
+  sending,
+  uploading,
+  onDraftChange,
+  onSend,
+  onAddFile,
+}) {
+  return (
+    <form className="ws-chat-composer" onSubmit={onSend}>
+      <ChatAttachMenu
+        onAddFile={onAddFile}
+        disabled={uploading || sending}
+      />
+      <label className="ws-chat-input-label" htmlFor="ws-chat-input">
+        Message
+      </label>
+      <input
+        id="ws-chat-input"
+        type="text"
+        placeholder="Ask about this project…"
+        value={draft}
+        onChange={(e) => onDraftChange(e.target.value)}
+        disabled={sending}
+        autoComplete="off"
+        aria-label="Ask about this project"
+      />
+      <button
+        type="submit"
+        className="primary-button"
+        disabled={sending || !draft.trim()}
+      >
+        Send
+      </button>
+    </form>
+  );
+}
+
+function ChatPanel({
+  projectId,
+  messages,
+  userInitial,
+  pendingMessage = "",
+  onPendingConsumed,
+  onMessagesChange,
+  onAddFile,
+  uploading = false,
+  uploadError = null,
+  uploadStatus = null,
+}) {
+  const { ui, dispatch, sendMessage, bottomRef } = useWorkspaceChatStream({
+    projectId,
+    messages,
+    pendingMessage,
+    onPendingConsumed,
+    onMessagesChange,
+  });
+  const sending = ui.status === "sending";
+  const hasMessages = (messages ?? []).length > 0;
 
   async function handleSend(event) {
     event.preventDefault();
-    const text = ui.draft.trim();
-    if (!text || ui.sending || !projectId) {
-      return;
-    }
-
-    const history = messages ?? [];
-    const nextMessages = [...history, { role: "user", text }];
-    onMessagesChange?.(nextMessages);
-    dispatch({ type: "send_start" });
-
-    let assembled = "";
-    let failed = false;
-
-    try {
-      await apiPostSse(
-        `/api/procurement/projects/${projectId}/workspace/chat/stream`,
-        { message: text, history },
-        (evt) => {
-          if (evt.type === "token" && evt.text) {
-            assembled += evt.text;
-            dispatch({ type: "token", text: assembled });
-          } else if (evt.type === "context") {
-            dispatch({
-              type: "context",
-              label: evt.label || "Context",
-              detail: evt.detail || "",
-            });
-          } else if (evt.type === "done") {
-            assembled = evt.text || assembled;
-            dispatch({ type: "token", text: assembled });
-          } else if (evt.type === "error") {
-            failed = true;
-            dispatch({
-              type: "send_error",
-              error: evt.detail || "Agent stream failed.",
-            });
-          }
-        },
-      );
-
-      if (!failed) {
-        onMessagesChange?.([
-          ...nextMessages,
-          { role: "ai", text: assembled || "No reply." },
-        ]);
-        dispatch({ type: "send_done" });
-      }
-    } catch (err) {
-      dispatch({
-        type: "send_error",
-        error: err?.message || "Unable to reach the agent.",
-      });
-    }
+    await sendMessage(ui.draft.trim());
   }
 
   return (
     <section className="ws-chat">
-      <div className="ws-center-tabs">
-        {CENTER_TABS.map((name) => (
-          <button
-            key={name}
-            type="button"
-            className={ui.tab === name ? "active" : ""}
-            onClick={() => dispatch({ type: "set_tab", tab: name })}
-          >
-            {name}
-          </button>
-        ))}
-      </div>
+      <CenterTabs
+        tab={ui.tab}
+        onTab={(name) => dispatch({ type: "set_tab", tab: name })}
+      />
 
       {ui.tab === "Chat" ? (
         <div className="ws-chat-content">
+          {!hasMessages && !sending ? (
+            <Empty className="ws-chat-empty">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <MessageSquare />
+                </EmptyMedia>
+                <EmptyTitle>Ask about this project</EmptyTitle>
+                <EmptyDescription>
+                  Send a question to the procurement agent. Replies stream in
+                  here.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          ) : null}
+
           {(messages ?? []).map((msg, index) =>
             msg.role === "user" ? (
               <div key={messageKey(msg, index)} className="ws-chat-user">
@@ -149,87 +176,53 @@ function ChatPanel({ projectId, messages, userInitial, onMessagesChange }) {
             ) : (
               <div key={messageKey(msg, index)} className="ws-chat-ai">
                 <div className="ws-ai-avatar">AI</div>
-                <div className="ws-chat-ai-body">
-                  <strong>Procurement AI Agent</strong>
-                  <p>{msg.text}</p>
-                  {msg.points && (
-                    <ul>
-                      {msg.points.map((point) => (
-                        <li key={point}>{point}</li>
-                      ))}
-                    </ul>
-                  )}
-                  {msg.sources && (
-                    <div className="ws-sources">
-                      {msg.sources.map((source) => (
-                        <span key={source}>{source}</span>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <ChatAiBody
+                  thoughts={msg.thoughts}
+                  text={msg.text}
+                  durationMs={msg.thoughtMs}
+                  points={msg.points}
+                  sources={msg.sources}
+                />
               </div>
             ),
           )}
 
-          {ui.sending && (
+          {sending ? (
             <div className="ws-chat-ai">
               <div className="ws-ai-avatar">AI</div>
-              <div className="ws-chat-ai-body">
-                <strong>Procurement AI Agent</strong>
-                {ui.contextEvents.length > 0 && (
-                  <div className="ws-stream-context" aria-live="polite">
-                    {ui.contextEvents.map((ctx) => (
-                      <div
-                        key={`${ctx.label}::${ctx.detail}`}
-                        className="ws-stream-context-item"
-                      >
-                        <span className="ws-stream-context-label">{ctx.label}</span>
-                        {ctx.detail ? (
-                          <span className="ws-stream-context-detail">{ctx.detail}</span>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <p className="ws-stream-text">
-                  {ui.streamText || "Thinking…"}
-                  {ui.streamText ? (
-                    <span className="ws-stream-caret" aria-hidden="true" />
-                  ) : null}
-                </p>
-              </div>
+              <ChatAiBody
+                thoughts={ui.thoughts}
+                text={ui.streamText}
+                streaming
+              />
             </div>
-          )}
+          ) : null}
 
-          <form className="ws-chat-composer" onSubmit={handleSend}>
-            <label className="ws-chat-input-label" htmlFor="ws-chat-input">
-              Message
-            </label>
-            <input
-              id="ws-chat-input"
-              type="text"
-              placeholder="Ask about this project…"
-              value={ui.draft}
-              onChange={(e) =>
-                dispatch({ type: "set_draft", draft: e.target.value })
-              }
-              disabled={ui.sending}
-              autoComplete="off"
-              aria-label="Ask about this project"
-            />
-            <button
-              type="submit"
-              className="primary-button"
-              disabled={ui.sending || !ui.draft.trim()}
-            >
-              Send
-            </button>
-          </form>
-          {ui.sendError && (
+          <div ref={bottomRef} />
+
+          <ChatComposer
+            draft={ui.draft}
+            sending={sending}
+            uploading={uploading}
+            onDraftChange={(draft) => dispatch({ type: "set_draft", draft })}
+            onSend={handleSend}
+            onAddFile={onAddFile}
+          />
+          {uploadStatus && !uploadError ? (
+            <p className="ws-chat-upload-status" role="status">
+              {uploadStatus}
+            </p>
+          ) : null}
+          {uploadError ? (
+            <p className="ws-chat-error" role="alert">
+              {uploadError}
+            </p>
+          ) : null}
+          {ui.sendError ? (
             <p className="ws-chat-error" role="alert">
               {ui.sendError}
             </p>
-          )}
+          ) : null}
         </div>
       ) : (
         <div className="ws-center-placeholder">
