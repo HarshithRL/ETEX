@@ -49,20 +49,30 @@ function HitlRail({ insights, skippedGaps, busy, onSkipGaps, onBuild, onAddFile 
   if (xlsxReady) step = "ppt";
   if (pptReady) step = "done";
 
+  const steps = [
+    { id: "upload", label: "Create + files" },
+    { id: "kb", label: "Knowledge base" },
+    { id: "gaps", label: "Missing docs" },
+    { id: "xlsx", label: "Comparison Excel" },
+    { id: "ppt", label: "SteerCo PPT" },
+  ];
+  const currentIndex = ["upload", "kb", "gaps", "xlsx", "ppt", "done"].indexOf(step);
+
   return (
     <div className="ws-hitl">
       <ol className="ws-hitl-steps">
-        <li className={step !== "upload" ? "done" : "current"}>Create + files</li>
-        <li className={["gaps", "xlsx", "ppt", "done"].includes(step) ? "done" : step === "kb" ? "current" : ""}>
-          Knowledge base
-        </li>
-        <li className={["xlsx", "ppt", "done"].includes(step) ? "done" : step === "gaps" ? "current" : ""}>
-          Missing docs
-        </li>
-        <li className={["ppt", "done"].includes(step) ? "done" : step === "xlsx" ? "current" : ""}>
-          Comparison Excel
-        </li>
-        <li className={step === "done" ? "done" : step === "ppt" ? "current" : ""}>SteerCo PPT</li>
+        {steps.map((item, index) => {
+          let className = "";
+          if (index < currentIndex) className = "done";
+          else if (step === "done" && index === steps.length - 1) className = "done";
+          else if (index === currentIndex) className = "current";
+          return (
+            <li key={item.id} className={className}>
+              <span>{index + 1}</span>
+              {item.label}
+            </li>
+          );
+        })}
       </ol>
 
       {step === "gaps" && missing.length > 0 && (
@@ -75,7 +85,7 @@ function HitlRail({ insights, skippedGaps, busy, onSkipGaps, onBuild, onAddFile 
           <ul className="ws-gap-list">
             {missing.map((item) => (
               <li key={item.checklist_key} className="block">
-                {item.label}
+                <span>{item.label}</span>
                 <em>missing</em>
               </li>
             ))}
@@ -235,6 +245,19 @@ function StudioPanel({ projectId, projectName, graph, fileTick, onAddFile }) {
         {tab === "Analysis" && (
           <div className="ws-insight-list">
             {error && <p className="ws-insight-meta">{error}</p>}
+            <article className="ws-insight-card">
+              <header>
+                <span>Process</span>
+                <strong>{insights?.process_label || "Unset"}</strong>
+              </header>
+              <p>
+                {insights?.owner_entity || "Owner unset"}
+                {" · "}
+                {insights?.file_count || 0} files
+                {" · "}
+                {insights?.knowledge_pct ?? 0}% coverage
+              </p>
+            </article>
             <HitlRail
               insights={insights}
               skippedGaps={skippedGaps}

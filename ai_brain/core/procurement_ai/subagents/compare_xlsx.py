@@ -37,7 +37,13 @@ async def compare_xlsx(
     thread_id = ""
     if isinstance(config, dict):
         thread_id = str((config.get("configurable") or {}).get("thread_id") or "")
-    result = build_comparison_xlsx(project_id, insights, thread_id=thread_id)
+    result = build_comparison_xlsx(
+        project_id,
+        insights,
+        thread_id=thread_id,
+        chunks=chunks,
+        artifacts=artifacts,
+    )
     return {
         "procurement": {
             "compare_xlsx": result.get("status"),

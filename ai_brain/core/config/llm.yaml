@@ -1,3 +1,4 @@
 models:
-  fast_model: automation_d.ai_models.gw_dev_claude-sonnet-4-6_automation
-  thinking_model: automation_d.ai_models.gw_dev_meta-llama-3-3-70b-instruct_automation
+  # Same AI Gateway model as agent_server/core/model_factory/factory.py (main).
+  fast_model: system.ai.claude-sonnet-5
+  thinking_model: system.ai.claude-sonnet-5

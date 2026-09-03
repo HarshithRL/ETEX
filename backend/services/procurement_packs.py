@@ -21,14 +21,16 @@ def insights_for_owner(project_id: str, owner_id: str) -> dict[str, Any] | None:
     if project is None:
         return None
     try:
-        return _brain_get(f"/v1/projects/{project_id}/insights")
+        payload = _brain_get(f"/v1/projects/{project_id}/insights")
+        if payload.get("project_id"):
+            return payload
     except Exception as exc:  # noqa: BLE001
         log.warning("brain insights fallback: {}", exc)
-        from ai_brain.core.procurement_ai.insights import build_insight_payload
+    from ai_brain.core.procurement_ai.insights import build_insight_payload
 
-        artifacts = artifact_repo.list_for_project(project_id, owner_id)
-        chunks = chunk_repo.list_for_project(project_id)
-        return build_insight_payload(project, artifacts, chunks)
+    artifacts = artifact_repo.list_for_project(project_id, owner_id)
+    chunks = chunk_repo.list_for_project(project_id)
+    return build_insight_payload(project, artifacts, chunks)
 
 
 def packs_for_owner(project_id: str, owner_id: str) -> dict[str, Any] | None:
@@ -80,7 +82,13 @@ def _local_pack(project_id: str, owner_id: str, capability: str, thread_id: str)
     chunks = chunk_repo.list_for_project(project_id)
     if capability == "compare_xlsx":
         insights = build_insight_payload(project, artifacts, chunks)
-        result = build_comparison_xlsx(project_id, insights, thread_id=thread_id)
+        result = build_comparison_xlsx(
+            project_id,
+            insights,
+            thread_id=thread_id,
+            chunks=chunks,
+            artifacts=artifacts,
+        )
         return {
             "route": "procurement",
             "thread_id": thread_id,
@@ -98,8 +106,10 @@ def _local_pack(project_id: str, owner_id: str, capability: str, thread_id: str)
 
 def _brain_get(path: str) -> dict[str, Any]:
     url = f"{brain_base_url()}{path}"
-    with httpx.Client(timeout=30.0) as client:
+    with httpx.Client(timeout=5.0) as client:
         response = client.get(url)
+        if response.status_code == 404:
+            raise LookupError(f"brain {path} not found")
         response.raise_for_status()
         body = response.json()
         if not isinstance(body, dict):
@@ -109,7 +119,7 @@ def _brain_get(path: str) -> dict[str, Any]:
 
 def _brain_post(path: str, payload: dict[str, Any]) -> dict[str, Any]:
     url = f"{brain_base_url()}{path}"
-    with httpx.Client(timeout=120.0) as client:
+    with httpx.Client(timeout=180.0) as client:
         response = client.post(url, json=payload)
         response.raise_for_status()
         body = response.json()

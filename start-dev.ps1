@@ -1,4 +1,4 @@
-# Mate local dev — opens 3 terminals: Flask :5000, Vite :5173, Agent :8000
+# Mate local dev — opens 3 terminals: Flask :5000, Vite :5173, AI Brain :8004
 # Usage (from repo root): .\start-dev.ps1
 
 $ErrorActionPreference = "Stop"
@@ -33,6 +33,7 @@ Start-MateTerminal -Title "Mate 1/3 · Flask :5000" -Body @"
 Set-Location '$RepoRoot\backend'
 $activate
 `$env:DATABRICKS_CONFIG_PROFILE = '$DatabricksProfile'
+`$env:BRAIN_BASE_URL = 'http://127.0.0.1:8004'
 Write-Host ''
 Write-Host '=== Mate Flask API ===' -ForegroundColor Cyan
 Write-Host 'http://127.0.0.1:5000' -ForegroundColor Green
@@ -54,22 +55,22 @@ npm run dev
 
 Start-Sleep -Milliseconds 400
 
-# Stage 3 — Agent FastAPI (module start from repo root)
-Start-MateTerminal -Title "Mate 3/3 · Agent :8000" -Body @"
+# Stage 3 — AI Brain AgentServer (workspace chat + insights)
+Start-MateTerminal -Title "Mate 3/3 · AI Brain :8004" -Body @"
 Set-Location '$RepoRoot'
 $activate
 `$env:DATABRICKS_CONFIG_PROFILE = '$DatabricksProfile'
 `$env:PYTHONPATH = '$RepoRoot'
 Write-Host ''
-Write-Host '=== Mate Agent FastAPI ===' -ForegroundColor Cyan
-Write-Host 'http://127.0.0.1:8000/health' -ForegroundColor Green
+Write-Host '=== Mate AI Brain ===' -ForegroundColor Cyan
+Write-Host 'http://127.0.0.1:8004/health' -ForegroundColor Green
 Write-Host ''
-& '$Python' -m agent_server.start_server
+& '$Python' -m ai_brain.brain_server
 "@
 
 Write-Host ""
 Write-Host "Started 3 terminals:" -ForegroundColor Green
 Write-Host "  1. Flask API     -> http://127.0.0.1:5000"
 Write-Host "  2. Frontend      -> http://localhost:5173"
-Write-Host "  3. Agent FastAPI -> http://127.0.0.1:8000"
+Write-Host "  3. AI Brain      -> http://127.0.0.1:8004"
 Write-Host ""

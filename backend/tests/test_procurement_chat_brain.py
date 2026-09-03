@@ -22,6 +22,7 @@ def test_invocations_body_forces_deepagent_off():
     assert body["custom_inputs"]["procurement"] == {
         "mainagent": True,
         "deepagent": False,
+        "project_id": "proj-1",
     }
 
 
@@ -29,6 +30,8 @@ def test_invoke_body_forces_deepagent_off():
     body = invoke_body("hello", "proj-1")
     assert body["procurement"]["mainagent"] is True
     assert body["procurement"]["deepagent"] is False
+    assert body["procurement"]["project_id"] == "proj-1"
+    assert body["project_id"] == "proj-1"
 
 
 def test_map_answer_delta_to_token():

@@ -16,7 +16,7 @@ from ai_brain.core.procurement_ai.process_type import (
 )
 
 KNOWN_VENDORS = (
-    "EY", "BDO", "KPMG", "PwC", "PWC", "Trifinance", "HISENER",
+    "EY", "BDO", "KPMG", "PwC", "PWC", "Trifinance", "Inetum", "HISENER",
     "Sphera", "SAP", "Tagetik", "Kyriba", "ION", "FIS",
 )
 
@@ -37,11 +37,14 @@ _KEY_HINTS = {
 
 
 def build_insight_payload(project: Any, artifacts: list[Any], chunks: list[Any] | None = None) -> dict[str, Any]:
+    file_blob = " ".join(getattr(a, "original_name", "") or "" for a in artifacts)
     process_type = classify_process_type(
         business_process=getattr(project, "business_process", None),
         category=getattr(project, "category", None),
         name=getattr(project, "name", None),
-        description=getattr(project, "description", None),
+        description=" ".join(
+            part for part in (getattr(project, "description", None), file_blob) if part
+        ),
     )
     vendors = _vendor_cards(artifacts, chunks or [])
     requirements = _requirement_card(process_type, artifacts)
@@ -114,6 +117,8 @@ def _vendor_cards(artifacts: list[Any], chunks: list[Any]) -> list[dict[str, Any
     grouped: dict[str, list[Any]] = {}
     for artifact in artifacts:
         name = _vendor_name(getattr(artifact, "original_name", "") or "")
+        if not name:
+            continue
         grouped.setdefault(name, []).append(artifact)
     cards = []
     chunks_by_artifact = _chunks_by_artifact(chunks)
@@ -138,13 +143,21 @@ def _vendor_cards(artifacts: list[Any], chunks: list[Any]) -> list[dict[str, Any
     return cards
 
 
-def _vendor_name(filename: str) -> str:
+def _vendor_name(filename: str) -> str | None:
     stem = Path(filename).stem
-    upper = stem.upper()
+    blob = re.sub(r"[_\-]+", " ", stem)
+    upper = blob.upper()
+    lower = blob.lower()
+    if "rfp" in lower and not any(known.upper() in upper for known in KNOWN_VENDORS):
+        return None
+    if "TRIFINANCE" in upper or "INETUM" in upper:
+        return "TriFinance + Inetum"
     for known in KNOWN_VENDORS:
         if re.search(rf"\b{re.escape(known.upper())}\b", upper):
             return "PwC" if known.upper() == "PWC" else known
-    return re.sub(r"[_-]+", " ", stem).strip()[:48] or "Unnamed vendor"
+    if "INDEPENDENT ASSESSMENT" in upper and "SWIFT" in upper:
+        return "BDO"
+    return blob.strip()[:48] or "Unnamed vendor"
 
 
 def _roles_seen(files: list[Any]) -> list[str]:

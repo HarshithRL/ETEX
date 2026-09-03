@@ -1,4 +1,4 @@
-# Mate local dev — stop Flask :5000, Vite :5173, Agent :8000
+# Mate local dev — stop Flask :5000, Vite :5173, AI Brain :8004
 # Usage (from repo root): .\stop-dev.ps1
 
 $ErrorActionPreference = "Continue"
@@ -6,7 +6,8 @@ $ErrorActionPreference = "Continue"
 $DevPorts = @(
     @{ Port = 5000; Label = "Flask API" },
     @{ Port = 5173; Label = "Vite frontend" },
-    @{ Port = 8000; Label = "Agent FastAPI" }
+    @{ Port = 8004; Label = "AI Brain" },
+    @{ Port = 8000; Label = "Agent FastAPI (legacy)" }
 )
 
 function Get-PortListenerPids {
@@ -71,7 +72,7 @@ function Stop-Listener {
 
 Write-Host ""
 Write-Host "=== Mate stop-dev ===" -ForegroundColor Cyan
-Write-Host "Targets: :5000 Flask, :5173 Vite, :8000 Agent" -ForegroundColor DarkGray
+Write-Host "Targets: :5000 Flask, :5173 Vite, :8004 AI Brain" -ForegroundColor DarkGray
 Write-Host ""
 
 $targets = @{}
@@ -84,7 +85,7 @@ foreach ($entry in $DevPorts) {
 }
 
 if ($targets.Count -eq 0) {
-    Write-Host "No listeners on ports 5000, 5173, or 8000." -ForegroundColor Green
+    Write-Host "No listeners on ports 5000, 5173, 8004, or 8000." -ForegroundColor Green
     Write-Host ""
     exit 0
 }

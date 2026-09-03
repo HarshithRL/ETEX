@@ -11,7 +11,12 @@ import yaml
 from databricks.sdk import WorkspaceClient
 from databricks_langchain import ChatDatabricks
 
+from shared.logger_global import get_logger
+
+log = get_logger(__name__, service="ai_brain")
+
 DEFAULT_PROFILE = "adb-7181820732839861"
+DEFAULT_MODEL = "system.ai.claude-sonnet-5"
 DEFAULT_MAX_TOKENS = 1024
 _LLM_YAML = Path(__file__).with_name("llm.yaml")
 
@@ -44,10 +49,11 @@ def get_thinking_model_name() -> str:
 def get_workspace_client() -> WorkspaceClient:
     """Build a WorkspaceClient from the Databricks CLI profile (no hardcoded tokens)."""
     profile = os.getenv("DATABRICKS_CONFIG_PROFILE", DEFAULT_PROFILE)
+    log.debug("creating WorkspaceClient profile={}", profile)
     return WorkspaceClient(profile=profile)
 
 
-def get_llm(kind: ModelKind = "fast") -> ChatDatabricks:
+def get_llm(kind: ModelKind = "fast", *, max_tokens: int | None = None) -> ChatDatabricks:
     """
     ChatDatabricks pointed at Unity AI Gateway MLflow path.
 
@@ -59,18 +65,21 @@ def get_llm(kind: ModelKind = "fast") -> ChatDatabricks:
     ``POST /ai-gateway/mlflow/v1/chat/completions``.
     """
     names = _load_model_names()
-    model = os.getenv("DATABRICKS_MODEL") or names[kind]
+    model = os.getenv("DATABRICKS_MODEL") or names.get(kind) or DEFAULT_MODEL
 
-    max_tokens_raw = os.getenv("DATABRICKS_MAX_TOKENS", str(DEFAULT_MAX_TOKENS))
-    try:
-        max_tokens = int(max_tokens_raw)
-    except ValueError:
-        max_tokens = DEFAULT_MAX_TOKENS
+    if max_tokens is None:
+        max_tokens_raw = os.getenv("DATABRICKS_MAX_TOKENS", str(DEFAULT_MAX_TOKENS))
+        try:
+            max_tokens = int(max_tokens_raw)
+        except ValueError:
+            max_tokens = DEFAULT_MAX_TOKENS
 
     temperature_raw = os.getenv("DATABRICKS_TEMPERATURE")
     temperature: float | None = None
     if temperature_raw is not None and temperature_raw.strip() != "":
         temperature = float(temperature_raw)
+
+    log.debug("creating ChatDatabricks kind={} model={} max_tokens={}", kind, model, max_tokens)
 
     kwargs: dict = {
         "model": model,
