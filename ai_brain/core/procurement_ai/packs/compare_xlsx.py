@@ -41,7 +41,7 @@ def build_comparison_xlsx(project_id: str, insights: dict[str, Any], *, thread_i
 
 
 def _write_cover(ws, insights: dict[str, Any]) -> None:
-    ws["A1"] = "Mate comparison pack"
+    ws["A1"] = "Nexus Mate comparison pack"
     ws["A1"].font = Font(bold=True, size=16, color="FF6900")
     ws["A2"] = "Draft workbook. Humans award. Empty is missing, never zero."
     ws["A4"] = "Named field"

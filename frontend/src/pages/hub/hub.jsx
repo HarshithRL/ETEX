@@ -21,10 +21,6 @@ const HUB_TOOL_DISPLAY_NAMES = {
   "scope-builder": "Manufacturing agent",
 };
 
-function brandNameForDisplay(name) {
-  return name === "Mate" ? "Nexus" : name;
-}
-
 function categoriesForDisplay(categories) {
   const visible = [];
   for (const category of categories ?? []) {
@@ -103,21 +99,9 @@ function Hub() {
         <header className="hub-header">
           <div className="brand">
 
-            <img
-              src={brandLogo}
-              alt="Etex"
-              className="etex-logo"
-            />
+            <span className="nexus-prefix">nexus</span>
 
-            <span className="brand-divider" />
-
-            <span className="mate-name">
-              {brandNameForDisplay(page.brand.name)}
-            </span>
-
-            <span className="mate-icon">
-              ✧
-            </span>
+            <span className="mate-name">Mate</span>
 
           </div>
 

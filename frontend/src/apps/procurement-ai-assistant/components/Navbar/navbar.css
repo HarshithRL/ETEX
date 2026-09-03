@@ -20,20 +20,20 @@
 
 .navbar-brand-link {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: baseline;
+  gap: 8px;
   color: var(--text);
 }
 
-.navbar-logo {
-  width: 78px;
-  height: auto;
-  display: block;
+.navbar-nexus {
+  color: var(--text-subtle);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: lowercase;
 }
 
 .navbar-mate {
-  padding-left: 10px;
-  border-left: 1px solid var(--border-strong);
   color: var(--accent);
   font-size: 18px;
   font-weight: 600;
@@ -227,10 +227,7 @@
     justify-content: center;
   }
 
-  .navbar-logo {
-    width: 42px;
-  }
-
+  .navbar-nexus,
   .navbar-mate,
   .navbar-search input,
   .navbar-search-shortcut,
