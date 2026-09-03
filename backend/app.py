@@ -102,7 +102,7 @@ def _log_unhandled_error(exc: Exception):
 @app.get("/api/app-context")
 def get_app_context():
     return jsonify({
-        "brand": "etex",
+        "brand": "nexus",
         "product": "Mate",
         "tagline": "Your Everyday AI Assistant — Securely Built for Etex.",
         "learn_more_text": "Learn more",
