@@ -53,6 +53,7 @@ def hub():
         "page": "hub",
         "brand": {
             "name": "Mate",
+            "prefix": "nexus",
             "logo": "/etex-logo.png",
         },
         "welcome": {

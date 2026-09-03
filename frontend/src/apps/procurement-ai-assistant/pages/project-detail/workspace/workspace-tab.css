@@ -759,6 +759,161 @@
   transform: translateX(-50%);
 }
 
+.ws-hitl {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ws-fanout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.ws-fanout-node {
+  min-width: 52px;
+  padding: 6px 8px;
+  border: 1px solid #353535;
+  border-radius: 8px;
+  background: #202020;
+  color: #9a9a9a;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-align: center;
+}
+
+.ws-fanout-node em {
+  display: block;
+  margin-top: 2px;
+  color: #777;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 9px;
+}
+
+.ws-fanout-node.current {
+  border-color: #ff6900;
+  color: #ff6900;
+  background: rgba(255, 105, 0, 0.12);
+}
+
+.ws-fanout-node.done {
+  border-color: #3d5c3d;
+  color: #7dba6c;
+}
+
+.ws-fanout-split {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ws-fanout-arrow {
+  color: #666;
+  font-size: 12px;
+}
+
+.ws-fanout-note {
+  margin: 0;
+  color: #777;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.ws-insight-card {
+  padding: 10px 12px;
+  border: 1px solid #303030;
+  border-radius: 10px;
+  background: #1c1c1c;
+}
+
+.ws-insight-card header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.ws-insight-card header span {
+  color: #777;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.ws-insight-card header strong {
+  color: #f3f3f3;
+  font-size: 13px;
+}
+
+.ws-insight-card p {
+  margin: 0;
+  color: #9a9a9a;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.ws-pack-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ws-pack-btn,
+.ws-pack-link {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ws-pack-btn {
+  border: none;
+  background: #ff6900;
+  color: #111;
+  cursor: pointer;
+}
+
+.ws-pack-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ws-pack-link {
+  border: 1px solid #3a3a3a;
+  background: transparent;
+  color: #ddd;
+  cursor: pointer;
+}
+
+.ws-gap-list {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ws-gap-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  color: #ccc;
+  font-size: 11px;
+}
+
+.ws-gap-list em {
+  color: #e07a7a;
+  font-style: normal;
+}
+
 @media (max-width: 1100px) {
   .workspace-tab {
     grid-template-columns: 220px minmax(0, 1fr);

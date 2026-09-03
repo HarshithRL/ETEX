@@ -38,6 +38,12 @@ def procurement_from_custom(custom: dict[str, Any] | None) -> dict[str, Any]:
     data = parsed.model_dump()
     data.setdefault("main_agent", "")
     data.setdefault("deep_agent", "")
+    top_capability = str((custom or {}).get("capability") or "").strip()
+    top_project = str((custom or {}).get("project_id") or "").strip()
+    if top_capability and not data.get("capability"):
+        data["capability"] = top_capability
+    if top_project and not data.get("project_id"):
+        data["project_id"] = top_project
     return data
 
 
@@ -61,6 +67,8 @@ def graph_config(thread_id: str, checkpoint_id: str | None = None) -> dict[str, 
 def graph_payload(request_text: str, procurement: dict[str, Any]) -> dict[str, Any]:
     return {
         "request": request_text,
+        "project_id": str(procurement.get("project_id") or ""),
+        "capability": str(procurement.get("capability") or ""),
         "procurement": procurement,
         "route": "",
     }
@@ -83,6 +91,12 @@ def parse_mate_request(
     body: InvokeRequest,
 ) -> tuple[str, dict[str, Any], str, Any, str | None]:
     text = (body.request or "").strip()
-    procurement = procurement_from_custom({"procurement": body.procurement.model_dump()})
+    procurement = procurement_from_custom(
+        {
+            "procurement": body.procurement.model_dump(),
+            "capability": body.capability,
+            "project_id": body.project_id,
+        }
+    )
     thread_id = normalize_thread_id(body.thread_id or None)
     return text, procurement, thread_id, body.resume, body.checkpoint_id

@@ -1,4 +1,4 @@
-# Mate
+# Nexus Mate
 
 Etex internal AI accelerator. A hub-and-spoke platform: each vertical (Procurement, Document Builder, …) is a React app backed by a shared Flask API and a LangGraph agent stack on Databricks.
 
@@ -12,7 +12,7 @@ The **Hub** is the home page. From there, specialists open vertical tools.
 
 The first vertical is the **Procurement Agent**.
 
-**Business use case — vendor comparison:** the user uploads vendor / RFP documents; Mate produces a comparison matrix, a PPT, and a project workspace with an AI assistant.
+**Business use case — vendor comparison:** the user uploads vendor / RFP documents; Nexus Mate produces a comparison matrix, a PPT, and a project workspace with an AI assistant.
 
 Target stack for that product: React + Flask + LangChain / LangGraph + Deep Agents + Databricks + MLflow + FastAPI (agent wrapper). Deploy target is **Databricks Apps** (Linux, Python 3.11).
 

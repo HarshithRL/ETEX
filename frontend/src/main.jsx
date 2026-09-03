@@ -6,7 +6,7 @@ import { createLogger, installGlobalErrorHandlers } from './shared/logger-global
 
 const log = createLogger('main')
 installGlobalErrorHandlers(log.bind({ workflow: 'client.global' }))
-log.info('Mate frontend starting')
+log.info('Nexus Mate frontend starting')
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

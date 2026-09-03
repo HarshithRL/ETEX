@@ -30,6 +30,7 @@ from routes import (
     home_bp,
     hub_bp,
     logs_bp,
+    packs_bp,
     procurement_bp,
 )
 
@@ -56,6 +57,7 @@ app.register_blueprint(home_bp)
 app.register_blueprint(about_bp)
 app.register_blueprint(hub_bp)
 app.register_blueprint(procurement_bp)
+app.register_blueprint(packs_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(logs_bp)
 
@@ -100,7 +102,7 @@ def _log_unhandled_error(exc: Exception):
 @app.get("/api/app-context")
 def get_app_context():
     return jsonify({
-        "brand": "etex",
+        "brand": "nexus",
         "product": "Mate",
         "tagline": "Your Everyday AI Assistant — Securely Built for Etex.",
         "learn_more_text": "Learn more",

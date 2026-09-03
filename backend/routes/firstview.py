@@ -10,6 +10,7 @@ def firstview():
 
         "brand": {
             "name": "Mate",
+            "prefix": "nexus",
             "logo": "/etex-logo.png"
         },
 

@@ -2,10 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 
 import ThemeToggle from "../../../../components/theme/ThemeToggle";
-import { useTheme } from "../../../../components/theme/useTheme";
 import { apiGet } from "../../../../services/api";
-import etexLogoDark from "../../../../assets/brand/etex-logo-dark.png";
-import etexLogoLight from "../../../../assets/brand/etex-logo-light.png";
 import IdentityPopup from "./IdentityPopup";
 import "./navbar.css";
 
@@ -30,10 +27,6 @@ function initialFrom(name) {
 }
 
 function Navbar() {
-  const { resolvedTheme } = useTheme();
-  const brandLogo =
-    resolvedTheme === "light" ? etexLogoLight : etexLogoDark;
-
   const [identity, setIdentity] = useState(null);
   const [open, setOpen] = useState(false);
 
@@ -64,15 +57,8 @@ function Navbar() {
             to="/app/procurement-ai-assistant/dashboard"
             className="navbar-brand-link"
           >
-            <img
-              src={brandLogo}
-              alt="Etex"
-              className="navbar-logo"
-            />
-
-            <span className="navbar-mate">
-              Nexus
-            </span>
+            <span className="navbar-nexus">nexus</span>
+            <span className="navbar-mate">Mate</span>
           </Link>
         </div>
 
