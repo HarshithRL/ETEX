@@ -55,6 +55,15 @@ async def _thread_state_or_404(thread_id: str, checkpoint_id: str | None = None)
 
 
 def register_routes(app: FastAPI) -> None:
+    @app.get("/")
+    async def root() -> dict[str, Any]:
+        return {
+            "status": "ok" if runtime.ready and runtime.graph is not None else "starting",
+            "service": "ai_brain",
+            "health": "/health",
+            "ready": "/ready",
+        }
+
     @app.get("/ready")
     async def ready() -> dict[str, Any]:
         return {
@@ -163,3 +172,7 @@ def register_routes(app: FastAPI) -> None:
             thread_id=thread_id,
             interrupts=list(custom.get("interrupts") or _interrupts_from_state(state)),
         )
+
+    from ai_brain.server.project_routes import register_project_routes
+
+    register_project_routes(app)

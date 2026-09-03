@@ -146,6 +146,66 @@ def test_unknown_thread_404(client: TestClient):
     assert response.status_code == 404
 
 
+def test_root_ok(client: TestClient):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.json()["service"] == "ai_brain"
+
+
+def test_project_insights_200(client: TestClient, monkeypatch):
+    class Project:
+        id = "proj-demo"
+        code = "PR-100"
+        name = "SWIFT CSP"
+        business_process = "Indirect"
+        category = "SWIFT CSCF"
+        description = "days"
+
+    monkeypatch.setattr(
+        "ai_brain.server.project_routes.load_context",
+        lambda _pid: (Project(), [], []),
+    )
+    response = client.get("/v1/projects/proj-demo/insights")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["project_id"] == "proj-demo"
+    assert body["process_type"] == "indirect_it_services"
+
+
+def test_project_insights_404(client: TestClient, monkeypatch):
+    monkeypatch.setattr(
+        "ai_brain.server.project_routes.load_context",
+        lambda _pid: (None, [], []),
+    )
+    response = client.get("/v1/projects/missing/insights")
+    assert response.status_code == 404
+
+
+def test_project_packs_200(client: TestClient, monkeypatch):
+    class Project:
+        id = "proj-demo"
+
+    monkeypatch.setattr(
+        "ai_brain.server.project_routes.load_project",
+        lambda _pid: Project(),
+    )
+    monkeypatch.setattr(
+        "ai_brain.server.project_routes.pack_store.read_status",
+        lambda _pid: {"xlsx": {"status": "idle"}, "ppt": {"status": "idle"}},
+    )
+    response = client.get("/v1/projects/proj-demo/packs")
+    assert response.status_code == 200
+    assert response.json()["xlsx"]["status"] == "idle"
+
+
+def test_project_run_bad_capability(client: TestClient):
+    response = client.post(
+        "/v1/projects/proj-demo/runs",
+        json={"capability": "nope", "message": "x", "thread_id": "t1"},
+    )
+    assert response.status_code == 400
+
+
 def test_thread_update(client: TestClient):
     client.post(
         "/invoke",

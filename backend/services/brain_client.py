@@ -32,15 +32,20 @@ def _timeout() -> httpx.Timeout:
     return httpx.Timeout(seconds, connect=10.0)
 
 
-def workspace_procurement() -> dict[str, bool]:
-    return dict(WORKSPACE_PROCUREMENT)
+def workspace_procurement(project_id: str = "") -> dict[str, Any]:
+    flags: dict[str, Any] = dict(WORKSPACE_PROCUREMENT)
+    pid = (project_id or "").strip()
+    if pid:
+        flags["project_id"] = pid
+    return flags
 
 
 def invoke_body(request_text: str, thread_id: str) -> dict[str, Any]:
     return {
         "request": request_text,
-        "procurement": workspace_procurement(),
+        "procurement": workspace_procurement(thread_id),
         "thread_id": thread_id,
+        "project_id": thread_id,
     }
 
 
@@ -49,7 +54,7 @@ def invocations_body(request_text: str, thread_id: str) -> dict[str, Any]:
         "input": [{"role": "user", "content": request_text, "type": "message"}],
         "custom_inputs": {
             "request": request_text,
-            "procurement": workspace_procurement(),
+            "procurement": workspace_procurement(thread_id),
             "thread_id": thread_id,
         },
         "stream": True,

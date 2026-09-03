@@ -1,4 +1,4 @@
-"""Nexus graph. Procurement subgraph is gated by procurement.mainagent / procurement.deepagent."""
+"""Nexus graph. Procurement subgraph is gated by capability or mainagent / deepagent flags."""
 
 from __future__ import annotations
 
@@ -16,6 +16,8 @@ from ai_brain.core.procurement_ai.procura_graph import (
 
 class NexesState(TypedDict):
     request: str
+    project_id: str
+    capability: str
     procurement: Annotated[ProcurementState, merge_dicts]
     route: str
 

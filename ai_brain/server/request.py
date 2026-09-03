@@ -61,6 +61,8 @@ def graph_config(thread_id: str, checkpoint_id: str | None = None) -> dict[str, 
 def graph_payload(request_text: str, procurement: dict[str, Any]) -> dict[str, Any]:
     return {
         "request": request_text,
+        "project_id": str(procurement.get("project_id") or "").strip(),
+        "capability": str(procurement.get("capability") or "").strip(),
         "procurement": procurement,
         "route": "",
     }
@@ -83,6 +85,11 @@ def parse_mate_request(
     body: InvokeRequest,
 ) -> tuple[str, dict[str, Any], str, Any, str | None]:
     text = (body.request or "").strip()
-    procurement = procurement_from_custom({"procurement": body.procurement.model_dump()})
+    flags = body.procurement.model_dump()
+    if body.capability:
+        flags["capability"] = body.capability
+    if body.project_id:
+        flags["project_id"] = body.project_id
+    procurement = procurement_from_custom({"procurement": flags})
     thread_id = normalize_thread_id(body.thread_id or None)
     return text, procurement, thread_id, body.resume, body.checkpoint_id

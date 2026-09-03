@@ -45,6 +45,7 @@ function WorkspaceTab({ projectId, onProjectUpdated }) {
   const [messages, setMessages] = useState([]);
   const [pendingMessage, setPendingMessage] = useState("");
   const [error, setError] = useState(null);
+  const [fileTick, setFileTick] = useState(0);
   const [uploadUi, setUploadUi] = useState({
     uploading: false,
     error: null,
@@ -88,6 +89,8 @@ function WorkspaceTab({ projectId, onProjectUpdated }) {
           ? { ...prev, files: payload.files, storage: payload.storage }
           : payload,
       );
+      setFileTick((n) => n + 1);
+      onProjectUpdated?.();
     });
   }
 
@@ -114,13 +117,13 @@ function WorkspaceTab({ projectId, onProjectUpdated }) {
       return;
     }
 
-    setUploadUi({ uploading: true, error: null, status: "Uploading…" });
+    setUploadUi({ uploading: true, error: null, status: "Uploading\u2026" });
     try {
       const result = await uploadProjectFiles(projectId, files);
       try {
         await refreshFiles();
       } catch {
-        /* upload succeeded; sidebar refresh is best-effort */
+        setFileTick((n) => n + 1);
       }
       setUploadUi({
         uploading: false,
@@ -137,7 +140,7 @@ function WorkspaceTab({ projectId, onProjectUpdated }) {
   }
 
   if (!data && !error) {
-    return <div className="workspace-tab">Loading…</div>;
+    return <div className="workspace-tab">Loading\u2026</div>;
   }
 
   if (error || !data) {
@@ -177,8 +180,11 @@ function WorkspaceTab({ projectId, onProjectUpdated }) {
         uploadStatus={uploadUi.status}
       />
       <StudioPanel
+        projectId={projectId}
         projectName={data.projectName}
         graph={data.graph}
+        fileTick={fileTick}
+        onAddFile={openFilePicker}
       />
     </div>
   );
