@@ -30,6 +30,7 @@ from routes import (
     home_bp,
     hub_bp,
     logs_bp,
+    packs_bp,
     procurement_bp,
 )
 
@@ -56,6 +57,7 @@ app.register_blueprint(home_bp)
 app.register_blueprint(about_bp)
 app.register_blueprint(hub_bp)
 app.register_blueprint(procurement_bp)
+app.register_blueprint(packs_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(logs_bp)
 
