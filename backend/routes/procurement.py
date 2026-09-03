@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Thread
+
 from flask import Blueprint, Response, jsonify, request, stream_with_context
 
 from routes.auth import get_or_resolve_identity
@@ -24,6 +27,16 @@ from services.request_user import AuthRequiredError, auth_error_response, requir
 
 procurement_bp = Blueprint("procurement", __name__)
 log = get_logger(__name__)
+
+
+def _kick_ingest(project_id: str, owner_id: str) -> None:
+    """After parse join, fan-out KB + knowledge graph. Packs stay HITL."""
+    try:
+        from services import procurement_packs
+
+        procurement_packs.start_pack(project_id, owner_id, "ingest")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("ingest fan-out skipped project_id={} error={}", project_id, exc)
 
 
 def _load_project_or_404(project_id: str, owner_id: str):
@@ -170,34 +183,48 @@ def upload_project_files(project_id):
 
     folder = (request.form.get("folder") or artifact_repo.FOLDER_VENDOR).strip()
     created = []
+    pending = []
     try:
         for upload in uploads:
             if not upload or not upload.filename:
                 continue
-            artifact = artifact_repo.create_upload(
-                project_id,
-                owner_id,
-                UploadFile(
-                    filename=upload.filename,
-                    stream=upload.stream,
-                    content_type=upload.content_type,
-                ),
-                folder=folder,
+            pending.append(
+                artifact_repo.create_upload(
+                    project_id,
+                    owner_id,
+                    UploadFile(
+                        filename=upload.filename,
+                        stream=upload.stream,
+                        content_type=upload.content_type,
+                    ),
+                    folder=folder,
+                )
             )
-            parsed = parse_and_store(artifact)
-            created.append(
-                {
-                    "id": parsed.id,
-                    "name": parsed.original_name,
-                    "folder": parsed.folder,
-                    "parseStatus": parsed.parse_status,
-                    "parseError": parsed.parse_error,
-                }
-            )
+        if pending:
+            workers = min(8, len(pending))
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                futures = [pool.submit(parse_and_store, artifact) for artifact in pending]
+                for future in as_completed(futures):
+                    parsed = future.result()
+                    created.append(
+                        {
+                            "id": parsed.id,
+                            "name": parsed.original_name,
+                            "folder": parsed.folder,
+                            "parseStatus": parsed.parse_status,
+                            "parseError": parsed.parse_error,
+                        }
+                    )
     except ProjectNotFoundError:
         return jsonify({"error": "not_found"}), 404
 
-    return jsonify({"uploaded": created}), 201
+    Thread(
+        target=_kick_ingest,
+        args=(project_id, owner_id),
+        daemon=True,
+        name=f"ingest-{project_id[:8]}",
+    ).start()
+    return jsonify({"uploaded": created, "pipeline": "ingest"}), 201
 
 
 @procurement_bp.route(

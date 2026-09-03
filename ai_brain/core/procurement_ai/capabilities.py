@@ -25,6 +25,13 @@ def normalize_capability(raw: object) -> str:
         "steerco": STEERCO_PPT,
         "chat": QA,
         "main": QA,
+        "ingest": INGEST,
+        "parse": INGEST,
+        "upload": INGEST,
+        "kb": KB_BUILD,
+        "kg": KB_BUILD,
+        "knowledge": KB_BUILD,
+        "pipeline": INGEST,
     }
     value = aliases.get(value, value)
     return value if value in KNOWN else ""

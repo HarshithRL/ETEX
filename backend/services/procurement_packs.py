@@ -78,6 +78,15 @@ def _local_pack(project_id: str, owner_id: str, capability: str, thread_id: str)
     project = project_repo.get_for_owner(project_id, owner_id)
     artifacts = artifact_repo.list_for_project(project_id, owner_id)
     chunks = chunk_repo.list_for_project(project_id)
+    if capability in {"ingest", "kb_build", "parse", "upload", "pipeline", "knowledge", "kb", "kg"}:
+        from ai_brain.core.procurement_ai.pipeline import run_kb_kg_parallel
+
+        result = run_kb_kg_parallel(project_id)
+        return {
+            "route": "procurement",
+            "thread_id": thread_id,
+            "procurement": result,
+        }
     if capability == "compare_xlsx":
         insights = build_insight_payload(project, artifacts, chunks)
         result = build_comparison_xlsx(project_id, insights, thread_id=thread_id)

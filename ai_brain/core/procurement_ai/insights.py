@@ -97,6 +97,7 @@ def build_insight_payload(project: Any, artifacts: list[Any], chunks: list[Any] 
             "xlsx": {"status": xlsx_status, "href": packs.get("xlsx", {}).get("href"), "thread_id": packs.get("xlsx", {}).get("thread_id")},
             "ppt": {"status": ppt_status, "href": packs.get("ppt", {}).get("href"), "thread_id": packs.get("ppt", {}).get("thread_id")},
         },
+        "pipeline": _pipeline_card(getattr(project, "id", "")),
     }
 
 
@@ -108,6 +109,23 @@ def _decision_summary(process_type: str, knowledge_pct: int, can_xlsx: bool, can
     if can_xlsx:
         return f"Draft comparison can be built from uploaded files ({knowledge_pct}% mandatory coverage). Scores stay draft until weights are locked. Humans award."
     return blockers[0] if blockers else "Files or process type missing"
+
+
+def _pipeline_card(project_id: str) -> dict[str, Any]:
+    from ai_brain.core.procurement_ai.pipeline import read_json
+
+    kb = read_json(project_id, "knowledge_base.json") if project_id else None
+    kg = read_json(project_id, "knowledge_graph.json") if project_id else None
+    return {
+        "parse": "parallel",
+        "kb_kg": "parallel",
+        "xlsx_ppt": "serial",
+        "xlsx_ppt_reason": "SteerCo PPT is generated from named Excel fields.",
+        "kb_status": (kb or {}).get("status"),
+        "kg_status": (kg or {}).get("status"),
+        "kg_nodes": (kg or {}).get("node_count"),
+        "kg_edges": (kg or {}).get("edge_count"),
+    }
 
 
 def _vendor_cards(artifacts: list[Any], chunks: list[Any]) -> list[dict[str, Any]]:

@@ -51,19 +51,36 @@ function HitlRail({ insights, skippedGaps, busy, onSkipGaps, onBuild, onAddFile 
 
   return (
     <div className="ws-hitl">
-      <ol className="ws-hitl-steps">
-        <li className={step !== "upload" ? "done" : "current"}>Create + files</li>
-        <li className={["gaps", "xlsx", "ppt", "done"].includes(step) ? "done" : step === "kb" ? "current" : ""}>
-          Knowledge base
-        </li>
-        <li className={["xlsx", "ppt", "done"].includes(step) ? "done" : step === "gaps" ? "current" : ""}>
-          Missing docs
-        </li>
-        <li className={["ppt", "done"].includes(step) ? "done" : step === "xlsx" ? "current" : ""}>
-          Comparison Excel
-        </li>
-        <li className={step === "done" ? "done" : step === "ppt" ? "current" : ""}>SteerCo PPT</li>
-      </ol>
+      <div className="ws-fanout" aria-label="Pipeline">
+        <div className={`ws-fanout-node ${step !== "upload" ? "done" : "current"}`}>Upload</div>
+        <span className="ws-fanout-arrow">→</span>
+        <div className={`ws-fanout-node ${["gaps", "xlsx", "ppt", "done"].includes(step) ? "done" : step === "kb" ? "current" : ""}`}>
+          Parse
+          <em>parallel files</em>
+        </div>
+        <span className="ws-fanout-arrow">→</span>
+        <div className="ws-fanout-split">
+          <div className={`ws-fanout-node ${insights?.pipeline?.kb_status === "ready" || ["xlsx", "ppt", "done"].includes(step) ? "done" : step === "kb" || step === "gaps" ? "current" : ""}`}>
+            KB
+          </div>
+          <div className={`ws-fanout-node ${insights?.pipeline?.kg_status === "ready" || ["xlsx", "ppt", "done"].includes(step) ? "done" : step === "kb" || step === "gaps" ? "current" : ""}`}>
+            Graph
+          </div>
+        </div>
+        <span className="ws-fanout-arrow">→</span>
+        <div className={`ws-fanout-node ${["ppt", "done"].includes(step) ? "done" : step === "xlsx" ? "current" : ""}`}>
+          Excel
+          <em>HITL</em>
+        </div>
+        <span className="ws-fanout-arrow">→</span>
+        <div className={`ws-fanout-node ${step === "done" ? "done" : step === "ppt" ? "current" : ""}`}>
+          PPT
+          <em>from Excel</em>
+        </div>
+      </div>
+      <p className="ws-fanout-note">
+        Files parse in parallel. Knowledge base and graph fan out together. SteerCo waits on Excel named fields.
+      </p>
 
       {step === "gaps" && missing.length > 0 && (
         <article className="ws-insight-card pack">

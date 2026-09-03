@@ -15,6 +15,7 @@ from ai_brain.server.schemas import (
     InvokeRequest,
     InvokeResponse,
     ProcurementResult,
+    ProjectRunRequest,
     ResumeRequest,
 )
 from ai_brain.server.streaming import _interrupts_from_state, _jsonable
@@ -161,5 +162,64 @@ def register_routes(app: FastAPI) -> None:
             values if isinstance(values, dict) else {},
             request_text="",
             thread_id=thread_id,
+            interrupts=list(custom.get("interrupts") or _interrupts_from_state(state)),
+        )
+
+    @app.get("/v1/projects/{project_id}/insights")
+    def project_insights(project_id: str) -> dict[str, Any]:
+        from ai_brain.core.procurement_ai.insights import build_insight_payload
+        from ai_brain.core.procurement_ai.pipeline import read_json
+        from ai_brain.core.procurement_ai.project_context import load_context
+
+        project, artifacts, chunks = load_context(project_id)
+        if project is None:
+            raise HTTPException(status_code=404, detail="project not found")
+        payload = build_insight_payload(project, artifacts, chunks)
+        kb = read_json(project_id, "knowledge_base.json")
+        kg = read_json(project_id, "knowledge_graph.json")
+        payload["pipeline"] = {
+            "kb_status": (kb or {}).get("status") or payload.get("kb_status"),
+            "kg_status": (kg or {}).get("status"),
+            "kg_nodes": (kg or {}).get("node_count"),
+            "kg_edges": (kg or {}).get("edge_count"),
+            "fanout": ["parse_artifact", "kb_build||kg_build", "xlsx then ppt"],
+        }
+        if kg:
+            payload["knowledge_graph"] = {"nodes": kg.get("nodes") or [], "edges": kg.get("edges") or []}
+        return payload
+
+    @app.get("/v1/projects/{project_id}/packs")
+    def project_packs(project_id: str) -> dict[str, Any]:
+        from ai_brain.core.procurement_ai.packs import store as pack_store
+
+        return pack_store.read_status(project_id)
+
+    @app.post("/v1/projects/{project_id}/runs")
+    async def project_run(project_id: str, body: ProjectRunRequest) -> InvokeResponse:
+        from ai_brain.core.procurement_ai.capabilities import normalize_capability
+
+        capability = normalize_capability(body.capability) or body.capability
+        thread_id = (body.thread_id or "").strip() or f"{project_id}:{capability}"
+        text = (body.message or capability or "run").strip()
+        request = ResponsesAgentRequest(
+            input=[{"role": "user", "content": text, "type": "message"}],
+            custom_inputs={
+                "request": text,
+                "capability": capability,
+                "project_id": project_id,
+                "procurement": {
+                    "capability": capability,
+                    "project_id": project_id,
+                },
+                "thread_id": thread_id,
+            },
+        )
+        result = await non_streaming(request)
+        custom = result.custom_outputs or {}
+        _, _, state, values = await _thread_state_or_404(thread_id)
+        return _values_to_invoke_response(
+            values if isinstance(values, dict) else {},
+            request_text=text,
+            thread_id=str(custom.get("thread_id") or thread_id),
             interrupts=list(custom.get("interrupts") or _interrupts_from_state(state)),
         )
